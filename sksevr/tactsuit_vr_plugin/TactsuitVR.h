@@ -14,7 +14,9 @@
 #include "skse64\GameExtraData.h"
 
 #include "config.h"
-#include "shared/HapticLibrary.h"
+// #include "shared/HapticLibrary.h"
+#include "shared/ClientFactory.h"
+#include "shared/Domain/Sensation.h"
 #include "MenuChecker.h"
 
 #include <list>
@@ -279,15 +281,14 @@ namespace TactsuitVR
 		{
 
 		}
-		Feedback(FeedbackType _feedbackType, std::string _prefix, int _feedbackFileCount)
+		Feedback(FeedbackType _feedbackType, std::string _prefix)
 		{
 			feedbackType = _feedbackType;
 			prefix = _prefix;
-			feedbackFileCount = _feedbackFileCount;
 		}
 		FeedbackType feedbackType;
 		std::string prefix;
-		int feedbackFileCount = 0;
+		std::vector<std::shared_ptr<OWOGame::BakedSensation>> feedbackSensations = std::vector<std::shared_ptr<OWOGame::BakedSensation>>();
 	};
 
     extern float TOLERANCE;
@@ -296,7 +297,8 @@ namespace TactsuitVR
 
 	void FillFeedbackList();
 
-	void ProvideDotFeedback(bhaptics::PositionType position, int index, int intensity, int durationMillis);
+	// void ProvideDotFeedback(bhaptics::PositionType position, int index, int intensity, int durationMillis);
+	void ProvideDotFeedback(OWOGame::Muscle muscle, int index, int intensity, int durationMillis);
 	void ProvideHapticFeedback(float locationAngle, float locationHeight, FeedbackType effect, float intensityMultiplier = 1.0f, bool waitToPlay = false, bool playInMenu = false);
 	void ProvideHapticFeedbackThread(float locationAngle, float locationHeight, FeedbackType effect, float intensityMultiplier = 1.0f, bool waitToPlay = false, bool playInMenu = false);
 	void PauseHapticFeedBack(FeedbackType effect);
@@ -313,7 +315,8 @@ namespace TactsuitVR
 
 	void CreateSystem();
 
-	void TactFileRegister(std::string &configPath, std::string &filename, Feedback feedback);
+	OWOGame::Sensation* TactFileRegister(std::string &configPath, std::string &filename, Feedback feedback);
+
 
 
 	void RegisterFeedbackFiles();

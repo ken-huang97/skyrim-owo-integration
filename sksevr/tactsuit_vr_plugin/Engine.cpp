@@ -3375,7 +3375,7 @@ namespace TactsuitVR
 				const int index = randomGeneratorLowMoreProbable(0, 7, 8, 15, 4);
 				const int pos = randomGenerator(0, 1);
 				const int durationOffset = randomGenerator(0, 30) - 15;
-				ProvideDotFeedback(pos == 1 ? bhaptics::VestFront : bhaptics::VestBack, index, 30 * rainIntensity * intensityMultiplierRaindropVest, raineffectduration + durationOffset);
+				// ProvideDotFeedback(pos == 1 ? bhaptics::VestFront : bhaptics::VestBack, index, 30 * rainIntensity * intensityMultiplierRaindropVest, raineffectduration + durationOffset);
 			}
 			Sleep(sleepDuration);
 		}
@@ -3399,7 +3399,7 @@ namespace TactsuitVR
 				const int index = randomGenerator(0, 5);
 
 				const int durationOffset = randomGenerator(0, 30) - 15;
-				ProvideDotFeedback(left ? bhaptics::ForearmL : bhaptics::ForearmR, index, 30 * rainIntensity * intensityMultiplierRaindropArm, raineffectduration + durationOffset);
+				// ProvideDotFeedback(left ? bhaptics::ForearmL : bhaptics::ForearmR, index, 30 * rainIntensity * intensityMultiplierRaindropArm, raineffectduration + durationOffset);
 			}
 
 			Sleep(sleepDuration);
@@ -3423,7 +3423,7 @@ namespace TactsuitVR
 
 				const int index = randomGenerator(0, 5);
 				const int durationOffset = randomGenerator(0, 30) - 15;
-				ProvideDotFeedback(bhaptics::Head, index, 30 * rainIntensity * intensityMultiplierRaindropHead, raineffectduration + durationOffset);
+				// ProvideDotFeedback(bhaptics::Head, index, 30 * rainIntensity * intensityMultiplierRaindropHead, raineffectduration + durationOffset);
 			}
 			Sleep(sleepDuration);
 		}
