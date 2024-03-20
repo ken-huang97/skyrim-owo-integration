@@ -1,0 +1,190 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{C456684A-56CF-E654-655D-98A564BE152D}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>tactsuit_vr_plugin</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0.19041.0</WindowsTargetPlatformVersion>
+    <SccProjectName>
+    </SccProjectName>
+    <SccLocalPath>
+    </SccLocalPath>
+    <SccProvider>
+    </SccProvider>
+    <ProjectName>tactsuit_vr_plugin</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <TargetName>hardlight_vr_plugin</TargetName>
+    <OutDir>..\..\..\..\..\..\SkyrimVR\Data\skse\plugins</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <TargetName>tactsuit_vr_plugin</TargetName>
+    <LibraryPath>$(MsBuildProjectDirectory)\lib;$(LibraryPath);</LibraryPath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(MsBuildProjectDirectory)\lib;$(MsBuildProjectDirectory)\include;$(MsBuildProjectDirectory)\include\bindings\cpp;</IncludePath>
+    <SourcePath>$(VC_SourcePath);$(MsBuildProjectDirectory)\lib;</SourcePath>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>_DEBUG;_WINDOWS;_USRDLL;IMMERSIVE_WINDS_PLUGIN_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)\..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ForcedIncludeFiles>common/IPrefix.h</ForcedIncludeFiles>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>version.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <ModuleDefinitionFile>TactsuitVR.def</ModuleDefinitionFile>
+    </Link>
+    <PostBuildEvent>
+      <Command>copy "$(TargetPath)" "$(SkyrimVRPath)\$(TargetFileName)" /Y</Command>
+    </PostBuildEvent>
+    <PostBuildEvent>
+      <Message>Installing Tactsuit VR...</Message>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>NDEBUG;_WINDOWS;_USRDLL;TACTSUIT_VR_PLUGIN_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)\..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ForcedIncludeFiles>common/IPrefix.h</ForcedIncludeFiles>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>delayimp.lib;version.lib;openvr_api.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <ModuleDefinitionFile>TactsuitVR.def</ModuleDefinitionFile>
+      <DelayLoadDLLs>
+      </DelayLoadDLLs>
+      <RandomizedBaseAddress>
+      </RandomizedBaseAddress>
+    </Link>
+    <PostBuildEvent>
+      <Command>copy "$(TargetPath)" "$(SkyrimVRPath)\$(TargetFileName)" /Y</Command>
+    </PostBuildEvent>
+    <PostBuildEvent>
+      <Message>Installing Tactsuit VR...</Message>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="api\collisions\LocalOverlapObject.cpp" />
+    <ClCompile Include="api\collisions\Sphere.cpp" />
+    <ClCompile Include="api\higgsinterface001.cpp" />
+    <ClCompile Include="api\PapyrusVRTypes.cpp" />
+    <ClCompile Include="api\utils\OpenVRUtils.cpp" />
+    <ClCompile Include="config.cpp" />
+    <ClCompile Include="Engine.cpp" />
+    <ClCompile Include="MenuChecker.cpp" />
+    <ClCompile Include="RandomSelector.cpp" />
+    <ClCompile Include="src\commonutils.cpp" />
+    <ClCompile Include="src\easywsclient.cpp" />
+    <ClCompile Include="src\HapticLibrary.cpp" />
+    <ClCompile Include="src\hapticsManager.cpp" />
+    <ClCompile Include="src\ProjectModel.cpp" />
+    <ClCompile Include="src\timer.cpp" />
+    <ClCompile Include="src\util.cpp" />
+    <ClCompile Include="tactsuitinterface001.cpp" />
+    <ClCompile Include="tactsuitpluginapi.cpp" />
+    <ClCompile Include="TactsuitVR.cpp" />
+    <ClCompile Include="main.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\common\common_vc14.vcxproj">
+      <Project>{472e19ab-def0-42df-819b-18722e8dc822}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\skse64\skse64.vcxproj">
+      <Project>{639411c0-fc23-4819-a0c5-429a4e5d8a51}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\skse64_common\skse64_common.vcxproj">
+      <Project>{5fd1c08d-db80-480c-a1c6-f0920005cd13}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="api\collisions\IShape.h" />
+    <ClInclude Include="api\collisions\LocalOverlapObject.h" />
+    <ClInclude Include="api\collisions\Sphere.h" />
+    <ClInclude Include="api\higgsinterface001.h" />
+    <ClInclude Include="api\OpenVRTypes.h" />
+    <ClInclude Include="api\PapyrusVRAPI.h" />
+    <ClInclude Include="api\PapyrusVRTypes.h" />
+    <ClInclude Include="api\utils\OpenVRUtils.h" />
+    <ClInclude Include="api\VRHookAPI.h" />
+    <ClInclude Include="api\VRManagerAPI.h" />
+    <ClInclude Include="config.h" />
+    <ClInclude Include="dirent.h" />
+    <ClInclude Include="Engine.h" />
+    <ClInclude Include="include\openvr.h" />
+    <ClInclude Include="include\shared\HapticLibrary.h" />
+    <ClInclude Include="include\shared\model.h" />
+    <ClInclude Include="MenuChecker.h" />
+    <ClInclude Include="Sky.h" />
+    <ClInclude Include="src\commonutils.h" />
+    <ClInclude Include="src\easywsclient.h" />
+    <ClInclude Include="src\hapticsManager.h" />
+    <ClInclude Include="src\json.hpp" />
+    <ClInclude Include="src\ProjectModel.h" />
+    <ClInclude Include="src\timer.h" />
+    <ClInclude Include="src\util.h" />
+    <ClInclude Include="tactsuitinterface001.h" />
+    <ClInclude Include="tactsuitpluginapi.h" />
+    <ClInclude Include="TactsuitVR.h" />
+    <ClInclude Include="Utility.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="TactsuitVR.def" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

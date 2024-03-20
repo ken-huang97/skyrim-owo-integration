@@ -1,0 +1,4 @@
+LIBRARY	"tactsuit_vr_plugin"
+EXPORTS
+SKSEPlugin_Query
+SKSEPlugin_Load
