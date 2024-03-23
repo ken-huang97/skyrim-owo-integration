@@ -25,7 +25,7 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
@@ -51,8 +51,8 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <TargetName>hardlight_vr_plugin</TargetName>
-    <OutDir>..\..\..\..\..\..\SkyrimVR\Data\skse\plugins</OutDir>
+    <TargetName>tactsuit_vr_plugin</TargetName>
+    <OutDir>$(SolutionDir)output\SKSE\Plugins\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -70,13 +70,14 @@
       <PreprocessorDefinitions>_DEBUG;_WINDOWS;_USRDLL;IMMERSIVE_WINDS_PLUGIN_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)\..;%(AdditionalIncludeDirectories);$(SolutionDir)\tactsuit_vr_plugin\owo\Headers\;$(SolutionDir)\tactsuit_vr_plugin\include</AdditionalIncludeDirectories>
       <ForcedIncludeFiles>common/IPrefix.h</ForcedIncludeFiles>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>version.lib;%(AdditionalDependencies);OWO.lib;</AdditionalDependencies>
+      <AdditionalDependencies>delayimp.lib;version.lib;openvr_api.lib;%(AdditionalDependencies);OWO.lib;</AdditionalDependencies>
       <ModuleDefinitionFile>TactsuitVR.def</ModuleDefinitionFile>
+      <AdditionalLibraryDirectories>$(SolutionDir)tactsuit_vr_plugin\owo\</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>copy "$(TargetPath)" "$(SkyrimVRPath)\$(TargetFileName)" /Y</Command>

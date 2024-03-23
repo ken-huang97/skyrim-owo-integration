@@ -20,6 +20,7 @@ namespace TactsuitVR {
 
 	void CreateSystem()
 	{
+
 		if (!systemInitialized)
 		{
 			// Initialise("MOD_SKVR", "Mod_Skyrim_VR");
@@ -30,14 +31,45 @@ namespace TactsuitVR {
 
 			owo = OWOGame::OWO::Create();
 			owo->Configure(auth);
-			owo->AutoConnect();
+			//owo->AutoConnect();
+			
+			std::string ip = "192.168.0.195";
+
+			OWOGame::ConnectionState connectionState = owo->Connect({ ip });
+			LOG("Connecting to %s", ip.c_str());
+
+			int breaker = 0;
+			int maxWait = 30;
+			int waitMs = 1000;
+
+			while (owo->State() != OWOGame::ConnectionState::Connected && breaker < maxWait) {
+				std::string cs;
+
+				switch (owo->State())
+				{
+					case OWOGame::ConnectionState::Connected:   cs= "Connected"; break;
+					case OWOGame::ConnectionState::Disconnected:   cs ="Disconnected";  break;
+					case OWOGame::ConnectionState::Connecting: cs = "Connecting"; break;
+					default:      cs = "[Unknown]"; break;
+				}
+
+				LOG("OWO State: %s", cs.c_str());
+				WaitFor(waitMs);
+				breaker++;
+
+				if (breaker >= maxWait) {
+					LOG("OWO failed connection, breaking");
+				}
+			}
+
 			owo->UpdateStatus(1000); // TODO Need to pass how long since start?
 
-			LOG("System Initialized.");
+			LOG("OWO System Initialized.");
 			// RegisterFeedbackFiles();
 		}
 		systemInitialized = true;
 	}
+
 
 	OWOGame::Sensation* TactFileRegister(std::string &configPath, std::string &filename, Feedback feedback)
 	{
