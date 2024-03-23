@@ -14,7 +14,7 @@
     <ProjectGuid>{C456684A-56CF-E654-655D-98A564BE152D}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>tactsuit_vr_plugin</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.19041.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <SccProjectName>
     </SccProjectName>
     <SccLocalPath>
@@ -25,15 +25,15 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
@@ -68,14 +68,14 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_DEBUG;_WINDOWS;_USRDLL;IMMERSIVE_WINDS_PLUGIN_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)\..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)\..;%(AdditionalIncludeDirectories);$(SolutionDir)\tactsuit_vr_plugin\owo\Headers\;$(SolutionDir)\tactsuit_vr_plugin\include</AdditionalIncludeDirectories>
       <ForcedIncludeFiles>common/IPrefix.h</ForcedIncludeFiles>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>version.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>version.lib;%(AdditionalDependencies);OWO.lib;</AdditionalDependencies>
       <ModuleDefinitionFile>TactsuitVR.def</ModuleDefinitionFile>
     </Link>
     <PostBuildEvent>
@@ -94,7 +94,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>NDEBUG;_WINDOWS;_USRDLL;TACTSUIT_VR_PLUGIN_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)\..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)\..;%(AdditionalIncludeDirectories);$(SolutionDir)\tactsuit_vr_plugin\owo\Headers\;</AdditionalIncludeDirectories>
       <ForcedIncludeFiles>common/IPrefix.h</ForcedIncludeFiles>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
@@ -103,7 +103,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>delayimp.lib;version.lib;openvr_api.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>delayimp.lib;version.lib;openvr_api.lib;OWO.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ModuleDefinitionFile>TactsuitVR.def</ModuleDefinitionFile>
       <DelayLoadDLLs>
       </DelayLoadDLLs>
@@ -127,13 +127,6 @@
     <ClCompile Include="Engine.cpp" />
     <ClCompile Include="MenuChecker.cpp" />
     <ClCompile Include="RandomSelector.cpp" />
-    <ClCompile Include="src\commonutils.cpp" />
-    <ClCompile Include="src\easywsclient.cpp" />
-    <ClCompile Include="src\HapticLibrary.cpp" />
-    <ClCompile Include="src\hapticsManager.cpp" />
-    <ClCompile Include="src\ProjectModel.cpp" />
-    <ClCompile Include="src\timer.cpp" />
-    <ClCompile Include="src\util.cpp" />
     <ClCompile Include="tactsuitinterface001.cpp" />
     <ClCompile Include="tactsuitpluginapi.cpp" />
     <ClCompile Include="TactsuitVR.cpp" />
@@ -165,17 +158,43 @@
     <ClInclude Include="dirent.h" />
     <ClInclude Include="Engine.h" />
     <ClInclude Include="include\openvr.h" />
-    <ClInclude Include="include\shared\HapticLibrary.h" />
-    <ClInclude Include="include\shared\model.h" />
     <ClInclude Include="MenuChecker.h" />
+    <ClInclude Include="owo\Headers\ClientFactory.h" />
+    <ClInclude Include="owo\Headers\Controller\Authenticate.h" />
+    <ClInclude Include="owo\Headers\Controller\Client.h" />
+    <ClInclude Include="owo\Headers\Controller\FindServer.h" />
+    <ClInclude Include="owo\Headers\Controller\Message.h" />
+    <ClInclude Include="owo\Headers\Controller\Network.h" />
+    <ClInclude Include="owo\Headers\Controller\NotifyAbscense.h" />
+    <ClInclude Include="owo\Headers\Controller\OWO.h" />
+    <ClInclude Include="owo\Headers\Controller\ScanAvailableServers.h" />
+    <ClInclude Include="owo\Headers\Controller\SecretKeysVault.h" />
+    <ClInclude Include="owo\Headers\Controller\SendAuthMessage.h" />
+    <ClInclude Include="owo\Headers\Controller\SendEncryptedMessage.h" />
+    <ClInclude Include="owo\Headers\Controller\SendSensation.h" />
+    <ClInclude Include="owo\Headers\Controller\StopSensation.h" />
+    <ClInclude Include="owo\Headers\Domain\BakedSensation.h" />
+    <ClInclude Include="owo\Headers\Domain\BakedSensationsParser.h" />
+    <ClInclude Include="owo\Headers\Domain\Exceptions.h" />
+    <ClInclude Include="owo\Headers\Domain\GameAuth.h" />
+    <ClInclude Include="owo\Headers\Domain\Math.h" />
+    <ClInclude Include="owo\Headers\Domain\Microsensation.h" />
+    <ClInclude Include="owo\Headers\Domain\MicroSensationParser.h" />
+    <ClInclude Include="owo\Headers\Domain\Muscle.h" />
+    <ClInclude Include="owo\Headers\Domain\MusclesGroup.h" />
+    <ClInclude Include="owo\Headers\Domain\MusclesParser.h" />
+    <ClInclude Include="owo\Headers\Domain\OWOTypes.h" />
+    <ClInclude Include="owo\Headers\Domain\Sensation.h" />
+    <ClInclude Include="owo\Headers\Domain\SensationsBaker.h" />
+    <ClInclude Include="owo\Headers\Domain\SensationsFactory.h" />
+    <ClInclude Include="owo\Headers\Domain\SensationsParser.h" />
+    <ClInclude Include="owo\Headers\Domain\SensationsSequence.h" />
+    <ClInclude Include="owo\Headers\Domain\SensationsSequenceParser.h" />
+    <ClInclude Include="owo\Headers\Domain\SensationWithMuscles.h" />
+    <ClInclude Include="owo\Headers\Domain\SensationWithMusclesParser.h" />
+    <ClInclude Include="owo\Headers\Domain\String.h" />
+    <ClInclude Include="owo\Headers\Infraestructure\UDPNetwork.h" />
     <ClInclude Include="Sky.h" />
-    <ClInclude Include="src\commonutils.h" />
-    <ClInclude Include="src\easywsclient.h" />
-    <ClInclude Include="src\hapticsManager.h" />
-    <ClInclude Include="src\json.hpp" />
-    <ClInclude Include="src\ProjectModel.h" />
-    <ClInclude Include="src\timer.h" />
-    <ClInclude Include="src\util.h" />
     <ClInclude Include="tactsuitinterface001.h" />
     <ClInclude Include="tactsuitpluginapi.h" />
     <ClInclude Include="TactsuitVR.h" />
@@ -183,6 +202,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="TactsuitVR.def" />
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="owo\OWO.lib" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

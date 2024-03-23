@@ -60,9 +60,10 @@ void TactsuitInterface001::PlayHapticEffect(std::string effectFileName, float lo
 	TactsuitVR::ProvideHapticFeedbackSpecificFile(locationAngle, locationHeight, effectFileName, intensityCalculated, waitToPlay);
 }
 
+// TODO
 void TactsuitInterface001::StopHapticEffect(std::string effectFileName)
 {
-	TurnOffKey(effectFileName.c_str());
+	//TurnOffKey(effectFileName.c_str());
 }
 
 // Fetches the version number

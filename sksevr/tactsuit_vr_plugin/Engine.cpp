@@ -4351,10 +4351,11 @@ namespace TactsuitVR
 	void LatePlayDrowning()
 	{
 		Sleep(500);
-		if (!IsPlaying())
-		{
+		// TODO add back
+		//if (!IsPlaying())
+		//{
 			ProvideHapticFeedback(0, 0, FeedbackType::DrowningEffectVest, intensityMultiplierDrowningVest, true);
-		}
+		//}
 	}
 
 	bool ActorInCombat(Actor* actor)
@@ -4719,7 +4720,8 @@ namespace TactsuitVR
 
 	void StopHapticEffect(StaticFunctionTag* base, BSFixedString effect)
 	{
-		TurnOffKey(effect.data);
+		//TurnOffKey(effect.data);
+		PauseHapticFeedBack();
 	}
 
 	void StartHealingEffect(bool rightSpell)
@@ -5256,19 +5258,22 @@ namespace TactsuitVR
 				rightForeArm_node = m_nodePlayer3rdP->GetObjectByName(&rightForeArmName.data);
 			}
 
-			bool leftSleeveActive = IsDevicePlaying(bhaptics::PositionType::ForearmL) || IsDevicePlaying(bhaptics::PositionType::Left);
-			bool rightSleeveActive = IsDevicePlaying(bhaptics::PositionType::ForearmR) || IsDevicePlaying(bhaptics::PositionType::Right);
+			//TODO
+			//bool leftSleeveActive = IsDevicePlaying(bhaptics::PositionType::ForearmL) || IsDevicePlaying(bhaptics::PositionType::Left);
+			//bool rightSleeveActive = IsDevicePlaying(bhaptics::PositionType::ForearmR) || IsDevicePlaying(bhaptics::PositionType::Right);
+			bool leftSleeveActive = false;
+			bool rightSleeveActive = false;
 
 			if (hitLocation == Head)
 			{
-				if (IsDevicePlaying(bhaptics::PositionType::Head))
-				{
-					ProvideHapticFeedback(headingAngle, 0, FeedbackType::RangedHead, intensityMultiplierRangedHead);
-				}
-				else
-				{
+				//if (IsDevicePlaying(bhaptics::PositionType::Head))
+				//{
+				//	ProvideHapticFeedback(headingAngle, 0, FeedbackType::RangedHead, intensityMultiplierRangedHead);
+				//}
+				//else
+				//{
 					ProvideHapticFeedback(headingAngle, 0.5f, FeedbackType::Ranged, intensityMultiplierRanged);
-				}
+				/*}*/
 			}
 			else if(hitLocation == LeftArmItem)
 			{
@@ -5318,14 +5323,14 @@ namespace TactsuitVR
 					}
 					else //headshot
 					{
-						if (IsDevicePlaying(bhaptics::PositionType::Head))
+					/*	if (IsDevicePlaying(bhaptics::PositionType::Head))
 						{
 							ProvideHapticFeedback(headingAngle, 0, FeedbackType::RangedHead, intensityMultiplierRangedHead);
 						}
 						else
-						{
+						{*/
 							ProvideHapticFeedback(headingAngle, 0.5f, FeedbackType::Ranged, intensityMultiplierRanged);
-						}
+						/*}*/
 					}
 				}
 			}
@@ -5405,16 +5410,18 @@ namespace TactsuitVR
 				rightForeArm_node = m_nodePlayer3rdP->GetObjectByName(&rightForeArmName.data);
 			}
 
-			bool leftSleeveActive = IsDevicePlaying(bhaptics::PositionType::ForearmL) || IsDevicePlaying(bhaptics::PositionType::Left);
-			bool rightSleeveActive = IsDevicePlaying(bhaptics::PositionType::ForearmR) || IsDevicePlaying(bhaptics::PositionType::Right);
+			//bool leftSleeveActive = IsDevicePlaying(bhaptics::PositionType::ForearmL) || IsDevicePlaying(bhaptics::PositionType::Left);
+			//bool rightSleeveActive = IsDevicePlaying(bhaptics::PositionType::ForearmR) || IsDevicePlaying(bhaptics::PositionType::Right);
+			bool leftSleeveActive = false;
+			bool rightSleeveActive = false;
 
 			if (hitLocation == Head)
 			{
-				if (IsDevicePlaying(bhaptics::PositionType::Head))
+/*				if (IsDevicePlaying(bhaptics::PositionType::Head))
 				{
 					FeedbackType headVersion = GetHeadVersionOfMagic(magicFeedback);
 					ProvideHapticFeedback(headingAngle, 0, headVersion, intensityMultiplierMagicHead, false);
-				}				
+				}	*/			
 
 				ProvideHapticFeedback(headingAngle, 0.5f, magicFeedback, intensityMultiplierMagic, false);
 			}
@@ -5466,11 +5473,11 @@ namespace TactsuitVR
 					}
 					else //headshot
 					{
-						if (IsDevicePlaying(bhaptics::PositionType::Head))
-						{
-							FeedbackType headVersion = GetHeadVersionOfMagic(magicFeedback);
-							ProvideHapticFeedback(headingAngle, 0, headVersion, intensityMultiplierMagicHead, false);
-						}
+						//if (IsDevicePlaying(bhaptics::PositionType::Head))
+						//{
+						//	FeedbackType headVersion = GetHeadVersionOfMagic(magicFeedback);
+						//	ProvideHapticFeedback(headingAngle, 0, headVersion, intensityMultiplierMagicHead, false);
+						//}
 
 						ProvideHapticFeedback(headingAngle, 0.5f, magicFeedback, intensityMultiplierMagic, false);
 					}

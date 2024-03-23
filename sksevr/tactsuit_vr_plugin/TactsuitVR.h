@@ -14,10 +14,8 @@
 #include "skse64\GameExtraData.h"
 
 #include "config.h"
-// #include "shared/HapticLibrary.h"
-#include "shared/ClientFactory.h"
-#include "shared/Domain/Sensation.h"
 #include "MenuChecker.h"
+#include "Domain/BakedSensation.h"
 
 #include <list>
 #include <thread>
@@ -302,6 +300,7 @@ namespace TactsuitVR
 	void ProvideHapticFeedback(float locationAngle, float locationHeight, FeedbackType effect, float intensityMultiplier = 1.0f, bool waitToPlay = false, bool playInMenu = false);
 	void ProvideHapticFeedbackThread(float locationAngle, float locationHeight, FeedbackType effect, float intensityMultiplier = 1.0f, bool waitToPlay = false, bool playInMenu = false);
 	void PauseHapticFeedBack(FeedbackType effect);
+	void PauseHapticFeedBack();
 	void PauseHapticFeedBackSpellCastingRight();
 	void PauseHapticFeedBackSpellCastingLeft();
 	bool isPlayingHapticFeedBackAttackLeft();
@@ -309,7 +308,7 @@ namespace TactsuitVR
 	void LateFeedback(float locationAngle, FeedbackType feedback, float intensity, int sleepAmount, int count, bool waitToPlay, bool playInMenu);
 	bool IsPlayingKeyAll(FeedbackType effect);
 
-	bool TactFileRegisterFilename(std::string& filename);
+	// bool TactFileRegisterFilename(std::string& filename);
 	void ProvideHapticFeedbackSpecificFile(float locationAngle, float locationHeight, std::string feedbackFileName, float intensityMultiplier, bool waitToPlay);
 	void ProvideHapticFeedbackThreadSpecificFile(float locationAngle, float locationHeight, std::string feedbackFileName, float intensityMultiplier, bool waitToPlay);
 

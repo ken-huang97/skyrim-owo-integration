@@ -1,8 +1,8 @@
 #include "TactsuitVR.h"
 
-#include "shared/Domain/BakedSensationsParser.h"
-#include "shared/Domain/GameAuth.h"
-#include "shared/Controller/OWO.h"
+#include "Domain/BakedSensationsParser.h"
+#include "Domain/GameAuth.h"
+#include "Controller/OWO.h"
 
 namespace TactsuitVR {
 	bool systemInitialized = false;
@@ -354,12 +354,12 @@ namespace TactsuitVR {
 					}
 				}
 
-				if (!found)
+			/*	if (!found)
 				{
 					LOG("File category unknown: %s", filename.c_str());
 					skipTactExtension(filename);
 					TactFileRegisterFilename(filename);
-				}
+				}*/
 			}
 		}
 	}
@@ -389,7 +389,7 @@ namespace TactsuitVR {
 				{
 					if (stringStartsWith(filename, element.second.prefix))
 					{
-						ret.emplace_back(TactFileRegister(configPath, filename, element.second));
+						ret.emplace_back(TactFileRegister(configPath, filename, element.second)->ToString());
 						found = true;
 						break;
 					}
@@ -438,6 +438,11 @@ namespace TactsuitVR {
 	{
 		owo->Stop();
 	}	
+
+	void PauseHapticFeedBack()
+	{
+		owo->Stop();
+	}
 
 	void PauseHapticFeedBackSpellCastingRight()
 	{
