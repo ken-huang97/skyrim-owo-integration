@@ -313,6 +313,7 @@ namespace TactsuitVR
 	void ProvideHapticFeedbackThreadSpecificFile(float locationAngle, float locationHeight, std::string feedbackFileName, float intensityMultiplier, bool waitToPlay);
 
 	void CreateSystem();
+	void owoUpdateLoop();
 
 	OWOGame::Sensation* TactFileRegister(std::string &configPath, std::string &filename, Feedback feedback);
 

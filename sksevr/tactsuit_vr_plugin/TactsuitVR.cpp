@@ -7,7 +7,11 @@
 
 namespace TactsuitVR {
 	bool systemInitialized = false;
+	bool owoLoopUpdating = false;
+
 	float TOLERANCE = 0.00001f;
+
+	unsigned long initialConnectiontimeoutMs = 60 * 1000;
 
 	sharedPtr<OWOGame::OWO> owo;
 	std::clock_t startTime;
@@ -21,17 +25,13 @@ namespace TactsuitVR {
 	std::vector<FeedbackType> playerAttackingRight = { FeedbackType::PlayerAttackRight, FeedbackType::PlayerPowerAttackRight, FeedbackType::PlayerBashRight, FeedbackType::PlayerBlockRight, FeedbackType::PlayerBowHoldRight, FeedbackType::PlayerBowPullRight };
 
 	std::string ToString(OWOGame::ConnectionState cs) {
-		std::string ret;
-
-		switch (owo->State())
+		switch (cs)
 		{
-			case OWOGame::ConnectionState::Connected:   ret = "Connected"; break;
-			case OWOGame::ConnectionState::Disconnected:   ret = "Disconnected";  break;
-			case OWOGame::ConnectionState::Connecting: ret = "Connecting"; break;
-			default:      ret = "[Unknown]"; break;
+			case OWOGame::ConnectionState::Connected:   return "Connected";
+			case OWOGame::ConnectionState::Disconnected:   return "Disconnected";
+			case OWOGame::ConnectionState::Connecting: return "Connecting";
+			default:      return "[Unknown]";
 		}
-
-		return ret;
 	}
 
 	void CreateSystem()
@@ -39,51 +39,41 @@ namespace TactsuitVR {
 
 		if (!systemInitialized)
 		{
-			// Initialise("MOD_SKVR", "Mod_Skyrim_VR");
-			
-			// TODO: Add gameId when approved
+			// RegisterFeedbackFiles();
+
 			owoVector<owoString> bakedSensations = owoVector<owoString>(); // TODO: Generate sensations for create
+			// TODO: Add gameId when approved
 			auto auth = OWOGame::GameAuth::Create(bakedSensations);
 
 			startTime = std::clock();
-			//owo = OWOGame::OWO::Create();
 			owo = OWOGame::OWO::Create<OWOGame::UDPNetwork>();
-			//owo = std::make_shared< OWOGame::OWO>(OWOGame::ClientFactory::Create(CreateNew(OWOGame::UDPNetwork)));
-
 			owo->Configure(auth);
 			OWOGame::ConnectionState connectionState = owo->AutoConnect();
-			LOG("Received initial connection state %s", ToString(connectionState).c_str());
 
-			int waitMs = 1000;
-			unsigned long maxWait = 60 * 1000;
-			std::clock_t timeoutTime = std::clock() - startTime + maxWait;
-			std::clock_t curTime;
-			do {
-				curTime = std::clock() - startTime;
-				connectionState = owo->UpdateStatus(curTime);
-				
+			owoLoopUpdating = true;
+			std::thread owoUpdateThread(owoUpdateLoop);
+			owoUpdateThread.detach();
 
-				LOG("OWO State: %s %lu", ToString(connectionState).c_str(), curTime);
-				//WaitFor(waitMs);
-
-				if (curTime >= timeoutTime) {
-					LOG("OWO timedout connection, continuing");
-				}
-			}
-			while (connectionState != OWOGame::ConnectionState::Connected && curTime < timeoutTime);
-
-			if (connectionState == OWOGame::ConnectionState::Connected) {
-				LOG("OWO System Initialized");
-			}
-			else {
-				LOG("OWO Failed to initialize");
-			}
-			
-			// RegisterFeedbackFiles();
+			LOG("OWO System Initialized");
 		}
 		systemInitialized = true;
 	}
 
+	std::clock_t getTimeSinceStart() {
+		return std::clock() - startTime;
+	}
+
+	void owoUpdateLoop() {
+		OWOGame::ConnectionState prevConnectionState = OWOGame::ConnectionState::Disconnected;
+		OWOGame::ConnectionState curConnectionState;
+
+		while (owoLoopUpdating) {
+			curConnectionState = owo->UpdateStatus(getTimeSinceStart());
+			if (prevConnectionState != curConnectionState) {
+				LOG("OWO connection state changed from %s to %s", ToString(prevConnectionState).c_str(), ToString(curConnectionState).c_str());
+			}
+		}
+	}
 
 	OWOGame::Sensation* TactFileRegister(std::string &configPath, std::string &filename, Feedback feedback)
 	{
