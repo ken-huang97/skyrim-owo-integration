@@ -52,7 +52,9 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <TargetName>tactsuit_vr_plugin</TargetName>
-    <OutDir>$(SolutionDir)output\SKSE\Plugins\</OutDir>
+    <OutDir>..\..\..\..\mods\bHaptics Tactsuit - SkyrimVR Integration\SKSE\Plugins\</OutDir>
+    <ExternalIncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);</ExternalIncludePath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)tactsuit_vr_plugin\owo\Headers\Controller;$(SolutionDir)tactsuit_vr_plugin\owo\Headers\</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -75,9 +77,9 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>delayimp.lib;version.lib;openvr_api.lib;%(AdditionalDependencies);OWO.lib;</AdditionalDependencies>
+      <AdditionalDependencies>delayimp.lib;version.lib;openvr_api.lib;%(AdditionalDependencies);OWO.lib</AdditionalDependencies>
       <ModuleDefinitionFile>TactsuitVR.def</ModuleDefinitionFile>
-      <AdditionalLibraryDirectories>$(SolutionDir)tactsuit_vr_plugin\owo\</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)tactsuit_vr_plugin\owo</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>copy "$(TargetPath)" "$(SkyrimVRPath)\$(TargetFileName)" /Y</Command>
@@ -194,7 +196,7 @@
     <ClInclude Include="owo\Headers\Domain\SensationWithMuscles.h" />
     <ClInclude Include="owo\Headers\Domain\SensationWithMusclesParser.h" />
     <ClInclude Include="owo\Headers\Domain\String.h" />
-    <ClInclude Include="owo\Headers\Infraestructure\UDPNetwork.h" />
+    <ClInclude Include="owo\Headers\Infrastructure\UDPNetwork.h" />
     <ClInclude Include="Sky.h" />
     <ClInclude Include="tactsuitinterface001.h" />
     <ClInclude Include="tactsuitpluginapi.h" />

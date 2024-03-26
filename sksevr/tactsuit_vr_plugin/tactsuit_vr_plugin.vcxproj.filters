@@ -36,17 +36,40 @@
     <ClInclude Include="api\higgsinterface001.h" />
     <ClInclude Include="tactsuitinterface001.h" />
     <ClInclude Include="tactsuitpluginapi.h" />
-    <ClInclude Include="owo\Headers\Domain\String.h" />
     <ClInclude Include="owo\Headers\ClientFactory.h">
       <Filter>OWO</Filter>
     </ClInclude>
+    <ClInclude Include="owo\Headers\Controller\Message.h">
+      <Filter>OWO</Filter>
+    </ClInclude>
+    <ClInclude Include="owo\Headers\Controller\Network.h">
+      <Filter>OWO</Filter>
+    </ClInclude>
+    <ClInclude Include="owo\Headers\Controller\NotifyAbscense.h">
+      <Filter>OWO</Filter>
+    </ClInclude>
+    <ClInclude Include="owo\Headers\Controller\OWO.h">
+      <Filter>OWO</Filter>
+    </ClInclude>
+    <ClInclude Include="owo\Headers\Controller\ScanAvailableServers.h">
+      <Filter>OWO</Filter>
+    </ClInclude>
+    <ClInclude Include="owo\Headers\Controller\SecretKeysVault.h">
+      <Filter>OWO</Filter>
+    </ClInclude>
+    <ClInclude Include="owo\Headers\Controller\SendAuthMessage.h">
+      <Filter>OWO</Filter>
+    </ClInclude>
+    <ClInclude Include="owo\Headers\Controller\SendEncryptedMessage.h">
+      <Filter>OWO</Filter>
+    </ClInclude>
+    <ClInclude Include="owo\Headers\Controller\SendSensation.h">
+      <Filter>OWO</Filter>
+    </ClInclude>
+    <ClInclude Include="owo\Headers\Controller\StopSensation.h">
+      <Filter>OWO</Filter>
+    </ClInclude>
     <ClInclude Include="owo\Headers\Controller\Authenticate.h">
-      <Filter>OWO</Filter>
-    </ClInclude>
-    <ClInclude Include="owo\Headers\Domain\BakedSensation.h">
-      <Filter>OWO</Filter>
-    </ClInclude>
-    <ClInclude Include="owo\Headers\Domain\BakedSensationsParser.h">
       <Filter>OWO</Filter>
     </ClInclude>
     <ClInclude Include="owo\Headers\Controller\Client.h">
@@ -55,10 +78,10 @@
     <ClInclude Include="owo\Headers\Controller\FindServer.h">
       <Filter>OWO</Filter>
     </ClInclude>
-    <ClInclude Include="owo\Headers\Domain\GameAuth.h">
+    <ClInclude Include="owo\Headers\Domain\Exceptions.h">
       <Filter>OWO</Filter>
     </ClInclude>
-    <ClInclude Include="owo\Headers\Controller\Message.h">
+    <ClInclude Include="owo\Headers\Domain\GameAuth.h">
       <Filter>OWO</Filter>
     </ClInclude>
     <ClInclude Include="owo\Headers\Domain\Math.h">
@@ -79,34 +102,7 @@
     <ClInclude Include="owo\Headers\Domain\MusclesParser.h">
       <Filter>OWO</Filter>
     </ClInclude>
-    <ClInclude Include="owo\Headers\Domain\Exceptions.h">
-      <Filter>OWO</Filter>
-    </ClInclude>
-    <ClInclude Include="owo\Headers\Controller\Network.h">
-      <Filter>OWO</Filter>
-    </ClInclude>
-    <ClInclude Include="owo\Headers\Controller\NotifyAbscense.h">
-      <Filter>OWO</Filter>
-    </ClInclude>
-    <ClInclude Include="owo\Headers\Controller\OWO.h">
-      <Filter>OWO</Filter>
-    </ClInclude>
     <ClInclude Include="owo\Headers\Domain\OWOTypes.h">
-      <Filter>OWO</Filter>
-    </ClInclude>
-    <ClInclude Include="owo\Headers\Controller\ScanAvailableServers.h">
-      <Filter>OWO</Filter>
-    </ClInclude>
-    <ClInclude Include="owo\Headers\Controller\SecretKeysVault.h">
-      <Filter>OWO</Filter>
-    </ClInclude>
-    <ClInclude Include="owo\Headers\Controller\SendAuthMessage.h">
-      <Filter>OWO</Filter>
-    </ClInclude>
-    <ClInclude Include="owo\Headers\Controller\SendEncryptedMessage.h">
-      <Filter>OWO</Filter>
-    </ClInclude>
-    <ClInclude Include="owo\Headers\Controller\SendSensation.h">
       <Filter>OWO</Filter>
     </ClInclude>
     <ClInclude Include="owo\Headers\Domain\Sensation.h">
@@ -133,10 +129,16 @@
     <ClInclude Include="owo\Headers\Domain\SensationWithMusclesParser.h">
       <Filter>OWO</Filter>
     </ClInclude>
-    <ClInclude Include="owo\Headers\Infraestructure\UDPNetwork.h">
+    <ClInclude Include="owo\Headers\Domain\String.h">
       <Filter>OWO</Filter>
     </ClInclude>
-    <ClInclude Include="owo\Headers\Controller\StopSensation.h">
+    <ClInclude Include="owo\Headers\Domain\BakedSensation.h">
+      <Filter>OWO</Filter>
+    </ClInclude>
+    <ClInclude Include="owo\Headers\Domain\BakedSensationsParser.h">
+      <Filter>OWO</Filter>
+    </ClInclude>
+    <ClInclude Include="owo\Headers\Infrastructure\UDPNetwork.h">
       <Filter>OWO</Filter>
     </ClInclude>
   </ItemGroup>
