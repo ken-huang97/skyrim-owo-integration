@@ -359,7 +359,7 @@ namespace TactsuitVR {
 				// _MESSAGE("Key: %s  OffsetY: %g  OffsetAngleX: %g  Intensity: %g", key.c_str(), locationHeight, locationAngle, scaleOption.Intensity);
 
 
-				owo->Send(sensation->Clone());
+				owo->Send(BakedSensationsParser::Parse(sensation->Stringify()));
 			}
 			else
 			{
