@@ -270,6 +270,8 @@ namespace TactsuitVR
 
 		MagicArmorSpell,
 
+		SpellWheelOpen,
+
 		Default
 	};
 
@@ -315,9 +317,11 @@ namespace TactsuitVR
 	void CreateSystem();
 	void owoUpdateLoop();
 
-	OWOGame::Sensation* TactFileRegister(std::string &configPath, std::string &filename, Feedback feedback);
+	std::shared_ptr<OWOGame::BakedSensation> TactFileRegister(std::string &configPath, std::string &filename, Feedback feedback);
 
+	owoVector<owoString> ReadSensationFiles();
 
+	OWOGame::Muscle angleToMuscle(float locationAngle, float locationHeight);
 
-	void RegisterFeedbackFiles();
+	std::string feedbackTypeToString(FeedbackType feedbackType);
 }

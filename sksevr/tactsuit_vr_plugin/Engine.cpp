@@ -4664,7 +4664,9 @@ namespace TactsuitVR
 
 	void PlayHapticEffect(StaticFunctionTag* base, BSFixedString effect, float locationAngle, float locationHeight, float intensity, bool waitToPlay)
 	{
-		ProvideHapticFeedbackSpecificFile(locationAngle, locationHeight, effect.data, intensity, waitToPlay);
+		_MESSAGE("PlayHapticEffect papyrus triggered");
+		std::string feedbackFileName = effect.data + '\0';
+		ProvideHapticFeedbackSpecificFile(locationAngle, locationHeight, feedbackFileName, intensity, waitToPlay);
 	}
 
 	void VRIKHolster(StaticFunctionTag* base, UInt32 slotNumber, bool holster)
