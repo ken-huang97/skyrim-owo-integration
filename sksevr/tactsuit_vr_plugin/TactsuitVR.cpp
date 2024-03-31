@@ -1,6 +1,8 @@
 #include "TactsuitVR.h"
 
 #include "Domain/BakedSensationsParser.h"
+#include "Domain/SensationWithMusclesParser.h"
+#include "Domain/SensationsParser.h"
 #include "Domain/GameAuth.h"
 #include "Controller/OWO.h"
 #include "Infrastructure/UDPNetwork.h"
@@ -248,33 +250,33 @@ namespace TactsuitVR {
 		return false;
 	}
 
-	void ProvideDotFeedback(Muscle muscle, int index, int intensity, int durationMillis)
+	void ProvideDotFeedback(MusclesGroup muscle, int index, int intensity, int durationMillis)
 	{
 		_MESSAGE("ProvideDotFeedback");
-		// if (intensity < TOLERANCE)
-		// 	return;
+		if (intensity < TOLERANCE)
+			return;
 
-		// if (isGameStoppedNoDialogue())
-		// {
-		// 	return;
-		// }
+		if (isGameStoppedNoDialogue())
+		{
+			return;
+		}
 
-		// if (!systemInitialized)
-		// 	CreateSystem();
+		if (!systemInitialized)
+			CreateSystem();
+		std::string key;
 
-		// std::string key;
+		//std::vector<bhaptics::DotPoint> points;
+		//bhaptics::DotPoint point = bhaptics::DotPoint(index, intensity);
+		//points.emplace_back(point);
+		//SubmitDot(key.c_str(), position, points, durationMillis);
 
-		// std::vector<bhaptics::DotPoint> points;
-		// bhaptics::DotPoint point = bhaptics::DotPoint(index, intensity);
-		// points.emplace_back(point);
-		// SubmitDot(key.c_str(), position, points, durationMillis);
-
-		// TODO implement DOT
+		//TODO 
+		//owo->Send(new Sensation())
 	}
 
 	void ProvideHapticFeedback(float locationAngle, float locationHeight, FeedbackType effect, float intensityMultiplier, bool waitToPlay, bool playInMenu)
 	{
-		_MESSAGE("ProvideHapticFeedback %s %f %f", feedbackTypeToString(effect).c_str(), locationAngle, locationHeight);
+		// _MESSAGE("ProvideHapticFeedback %s %f %f", feedbackTypeToString(effect).c_str(), locationAngle, locationHeight);
 		if (intensityMultiplier > TOLERANCE)
 		{
 			std::thread t0(ProvideHapticFeedbackThread, locationAngle, locationHeight, effect, intensityMultiplier, waitToPlay, playInMenu);
@@ -340,26 +342,25 @@ namespace TactsuitVR {
 					locationHeight = 0.45f;
 
 				std::vector<std::shared_ptr<BakedSensation>> & feedbackSensations = feedbackMap[effect].feedbackSensations;
-				
 				std::shared_ptr<BakedSensation> sensation(feedbackSensations[(randi(0, feedbackSensations.size()-1))]);
-
-				_MESSAGE("%d sensations", feedbackSensations.size());
-				_MESSAGE("%s stringify", sensation->Stringify().c_str());
-				_MESSAGE("%f total duration", sensation->TotalDuration());
-				// Sensation sensation = feedbackMap[effect].feedbackSensations[(randi(0, feedbackMap[effect].feedbackSensations.size()-1))];
-
-				// bhaptics::RotationOption RotOption;
-				// RotOption.OffsetAngleX = locationAngle;
-				// RotOption.OffsetY = locationHeight;
-
-				// bhaptics::ScaleOption scaleOption;
-				// scaleOption.Duration = 1.0f;
-				// scaleOption.Intensity = (intensityMultiplier != 1.0f) ? intensityMultiplier : 1.0f;
 
 				// _MESSAGE("Key: %s  OffsetY: %g  OffsetAngleX: %g  Intensity: %g", key.c_str(), locationHeight, locationAngle, scaleOption.Intensity);
 
+				auto sensationStr = sensation->Stringify();
+				if (BakedSensationsParser::CanParse(sensationStr)) {
 
-				owo->Send(BakedSensationsParser::Parse(sensation->Stringify()));
+					owo->Send(BakedSensationsParser::Parse(sensationStr));
+
+				} else if (SensationWithMusclesParser::CanParse(sensationStr)) {
+
+					std::vector<Muscle> muscles = { angleToMuscle(locationAngle, locationHeight) };
+					owo->Send(SensationWithMusclesParser::Parse(sensationStr)->WithMuscles(muscles));
+
+				}
+				else {
+
+					owo->Send(SensationsParser::Parse(sensationStr));
+				}
 			}
 			else
 			{
@@ -368,76 +369,28 @@ namespace TactsuitVR {
 		}
 	}
 
+	std::string remove_after_underscore(const std::string& str) {
+		// Find the position of the first underscore
+		size_t underscore_pos = str.find('_');
+
+		// If there's no underscore, return the original string
+		if (underscore_pos == std::string::npos) {
+			return str;
+		}
+
+		// Return a substring from the beginning of the string to the position before the underscore
+		return str.substr(0, underscore_pos);
+	}
+
 	void ProvideHapticFeedbackSpecificFile(float locationAngle, float locationHeight, std::string feedbackFileName, float intensityMultiplier, bool waitToPlay)
 	{
+		_MESSAGE("ProvideHapticFeedbackSpecificFile %s", feedbackFileName.c_str());
+		auto feedback = stringToFeedbackType(remove_after_underscore(feedbackFileName));
 
-		_MESSAGE("These dont work rn %s", feedbackFileName);
-		_MESSAGE("WTF is happening here, bad external file %s", feedbackFileName.c_str());
-
-		return;
-
-		try {
-			//if (feedbackFileName.empty() || feedbackFileName.c_str() == NULL) {
-
-				_MESSAGE("WTF is happening here, bad external file %s", feedbackFileName);
-				_MESSAGE("WTF is happening here, bad external file %s", feedbackFileName.c_str());
-			//}
-
-
-			_MESSAGE("ProvideHapticFeedbackSpecificFile %s %f %f %f", feedbackFileName.c_str(), locationAngle, locationHeight, intensityMultiplier);
-
-			if (intensityMultiplier > TOLERANCE)
-			{
-				std::thread t0(ProvideHapticFeedbackThreadSpecificFile, locationAngle, locationHeight, feedbackFileName, intensityMultiplier, waitToPlay);
-				t0.detach();
-			}
-		}
-		catch (...) {
-			_MESSAGE("Caught");
-		}
+		return ProvideHapticFeedback(locationAngle, locationHeight, feedback, intensityMultiplier, waitToPlay);
 	}
 
-	void ProvideHapticFeedbackThreadSpecificFile(float locationAngle, float locationHeight, std::string feedbackFileName, float intensityMultiplier, bool waitToPlay)
-	{
-		_MESSAGE("ProvideHapticFeedbackThreadSpecificFile %s %f %f", feedbackFileName.c_str(), locationAngle, locationHeight);
-		if (intensityMultiplier < TOLERANCE)
-			return;
 
-		if (isGameStoppedNoDialogue())
-		{
-			return;
-		}
-
-		if (!systemInitialized)
-			CreateSystem();
-
-		if (waitToPlay)
-		{
-			// if (IsPlayingKey(feedbackFileName.c_str()))
-			// 	return;
-		}
-
-		if (locationHeight < -0.5f)
-			locationHeight = -0.5f;
-		else if (locationHeight > 0.5f)
-			locationHeight = 0.5f;
-
-		_MESSAGE("Key: %s  OffsetY: %g  OffsetAngleX: %g", feedbackFileName, locationHeight, locationAngle);
-
-		// bhaptics::RotationOption RotOption;
-		// RotOption.OffsetAngleX = locationAngle;
-		// RotOption.OffsetY = locationHeight;
-
-		// bhaptics::ScaleOption scaleOption;
-		// scaleOption.Duration = 1.0f;
-		// scaleOption.Intensity = (intensityMultiplier != 1.0f) ? intensityMultiplier : 1.0f;
-		
-		// SubmitRegisteredAlt(feedbackFileName.c_str(), feedbackFileName.c_str(), scaleOption, RotOption);
-		// owo->Send()
-
-		// _MESSAGE("ProvideHapticFeedback submit successful");
-		_MESSAGE("ProvideHapticFeedback not implemented");
-	}
 
 	// Thank you florianfahrenberger for this function
 	Muscle angleToMuscle(float locationAngle, float locationHeight) {
@@ -469,227 +422,261 @@ namespace TactsuitVR {
 		return myMuscle;
 	}
 
+
+	static const std::unordered_map<FeedbackType, std::string> feedbackStringMap = {
+		 {FeedbackType::NoFeedback, "NoFeedback"},
+		 {FeedbackType::MeleeSwordRight, "MeleeSwordRight"},
+		 {FeedbackType::MeleeAxeRight, "MeleeAxeRight"},
+		 {FeedbackType::MeleeMaceRight, "MeleeMaceRight"},
+		 {FeedbackType::MeleeDaggerRight, "MeleeDaggerRight"},
+		 {FeedbackType::Melee2HAxeRight, "Melee2HAxeRight"},
+		 {FeedbackType::Melee2HSwordRight, "Melee2HSwordRight"},
+		 {FeedbackType::MeleeSwordLeft, "MeleeSwordLeft"},
+		 {FeedbackType::MeleeAxeLeft, "MeleeAxeLeft"},
+		 {FeedbackType::MeleeMaceLeft, "MeleeMaceLeft"},
+		 {FeedbackType::MeleeDaggerLeft, "MeleeDaggerLeft"},
+		 {FeedbackType::Melee2HAxeLeft, "Melee2HAxeLeft"},
+		 {FeedbackType::Melee2HSwordLeft, "Melee2HSwordLeft"},
+		 {FeedbackType::MeleeFist, "MeleeFist"},
+		 {FeedbackType::MeleeBash, "MeleeBash"},
+		 {FeedbackType::MeleePowerAttack, "MeleePowerAttack"},
+		 {FeedbackType::Ranged, "Ranged"},
+		 {FeedbackType::MagicFire, "MagicFire"},
+		 {FeedbackType::MagicShock, "MagicShock"},
+		 {FeedbackType::MagicIce, "MagicIce"},
+		 {FeedbackType::MagicAlteration, "MagicAlteration"},
+		 {FeedbackType::MagicIllusion, "MagicIllusion"},
+		 {FeedbackType::MagicRestoration, "MagicRestoration"},
+		 {FeedbackType::MagicPoison, "MagicPoison"},
+		 {FeedbackType::MagicOther, "MagicOther"},
+		 {FeedbackType::MagicContinuousFire, "MagicContinuousFire"},
+		 {FeedbackType::MagicContinuousShock, "MagicContinuousShock"},
+		 {FeedbackType::MagicContinuousIce, "MagicContinuousIce"},
+		 {FeedbackType::MagicContinuousAlteration, "MagicContinuousAlteration"},
+		 {FeedbackType::MagicContinuousIllusion, "MagicContinuousIllusion"},
+		 {FeedbackType::MagicContinuousRestoration, "MagicContinuousRestoration"},
+		 {FeedbackType::MagicContinuousPoison, "MagicContinuousPoison"},
+		 {FeedbackType::MagicContinuousOther, "MagicContinuousOther"},
+		 {FeedbackType::HeartBeat, "HeartBeat"},
+		 {FeedbackType::HeartBeatFast, "HeartBeatFast"},
+		 {FeedbackType::GreybeardPowerAbsorb, "GreybeardPowerAbsorb"},
+		 {FeedbackType::DragonSoul, "DragonSoul"},
+		 {FeedbackType::WordWall, "WordWall"},
+		 {FeedbackType::PlayerSpellFireLeft, "PlayerSpellFireLeft"},
+		 {FeedbackType::PlayerSpellIceLeft, "PlayerSpellIceLeft"},
+		 {FeedbackType::PlayerSpellShockLeft, "PlayerSpellShockLeft"},
+		 {FeedbackType::PlayerSpellAlterationLeft, "PlayerSpellAlterationLeft"},
+		 {FeedbackType::PlayerSpellIllusionLeft, "PlayerSpellIllusionLeft"},
+		 {FeedbackType::PlayerSpellLightLeft, "PlayerSpellLightLeft"},
+		 {FeedbackType::PlayerSpellRestorationLeft, "PlayerSpellRestorationLeft"},
+		 {FeedbackType::PlayerSpellWardLeft, "PlayerSpellWardLeft"},
+		 {FeedbackType::PlayerSpellConjurationLeft, "PlayerSpellConjurationLeft"},
+		 {FeedbackType::PlayerSpellOtherLeft, "PlayerSpellOtherLeft"},
+		 {FeedbackType::PlayerSpellFireRight, "PlayerSpellFireRight"},
+		 {FeedbackType::PlayerSpellIceRight, "PlayerSpellIceRight"},
+		 {FeedbackType::PlayerSpellShockRight, "PlayerSpellShockRight"},
+		 {FeedbackType::PlayerSpellAlterationRight, "PlayerSpellAlterationRight"},
+		 {FeedbackType::PlayerSpellIllusionRight, "PlayerSpellIllusionRight"},
+		 {FeedbackType::PlayerSpellLightRight, "PlayerSpellLightRight"},
+		 {FeedbackType::PlayerSpellRestorationRight, "PlayerSpellRestorationRight"},
+		 {FeedbackType::PlayerSpellWardRight, "PlayerSpellWardRight"},
+		 {FeedbackType::PlayerSpellConjurationRight, "PlayerSpellConjurationRight"},
+		 {FeedbackType::PlayerSpellOtherRight, "PlayerSpellOtherRight"},
+		 {FeedbackType::PlayerPowerAttackLeft, "PlayerPowerAttackLeft"},
+		 {FeedbackType::PlayerBashLeft, "PlayerBashLeft"},
+		 {FeedbackType::PlayerAttackLeft, "PlayerAttackLeft"},
+		 {FeedbackType::PlayerPowerAttackRight, "PlayerPowerAttackRight"},
+		 {FeedbackType::PlayerBashRight, "PlayerBashRight"},
+		 {FeedbackType::PlayerAttackRight, "PlayerAttackRight"},
+		 {FeedbackType::PlayerBlockLeft, "PlayerBlockLeft"},
+		 {FeedbackType::PlayerBlockRight, "PlayerBlockRight"},
+		 {FeedbackType::PlayerBowPullLeft, "PlayerBowPullLeft"},
+		 {FeedbackType::PlayerBowPullRight, "PlayerBowPullRight"},
+		 {FeedbackType::PlayerBowHoldLeft, "PlayerBowHoldLeft"},
+		 {FeedbackType::PlayerBowHoldRight, "PlayerBowHoldRight"},
+		 {FeedbackType::PlayerShout, "PlayerShout"},
+		 {FeedbackType::PlayerShoutBindHands, "PlayerShoutBindHands"},
+		 {FeedbackType::PlayerShoutBindVest, "PlayerShoutBindVest"},
+		 {FeedbackType::PlayerCrossbowFireLeft, "PlayerCrossbowFireLeft"},
+		 {FeedbackType::PlayerCrossbowFireRight, "PlayerCrossbowFireRight"},
+		 {FeedbackType::PlayerCrossbowKickbackLeft, "PlayerCrossbowKickbackLeft"},
+		 {FeedbackType::PlayerCrossbowKickbackRight, "PlayerCrossbowKickbackRight"},
+		 {FeedbackType::Bite, "Bite"},
+		 {FeedbackType::SleeveHolsterStoreLeft, "SleeveHolsterStoreLeft"},
+		 {FeedbackType::SleeveHolsterStoreRight, "SleeveHolsterStoreRight"},
+		 {FeedbackType::SleeveHolsterRemoveLeft, "SleeveHolsterRemoveLeft"},
+		 {FeedbackType::SleeveHolsterRemoveRight, "SleeveHolsterRemoveRight"},
+		 {FeedbackType::BackpackStoreLeft, "BackpackStoreLeft"},
+		 {FeedbackType::BackpackStoreRight, "BackpackStoreRight"},
+		 {FeedbackType::BackpackRemoveLeft, "BackpackRemoveLeft"},
+		 {FeedbackType::BackpackRemoveRight, "BackpackRemoveRight"},
+		 {FeedbackType::StomachStore, "StomachStore"},
+		 {FeedbackType::StomachRemove, "StomachRemove"},
+		 {FeedbackType::ChestStore, "ChestStore"},
+		 {FeedbackType::ChestRemove, "ChestRemove"},
+		 {FeedbackType::HipHolsterStoreLeft, "HipHolsterStoreLeft"},
+		 {FeedbackType::HipHolsterStoreRight, "HipHolsterStoreRight"},
+		 {FeedbackType::HipHolsterRemoveLeft, "HipHolsterRemoveLeft"},
+		 {FeedbackType::HipHolsterRemoveRight, "HipHolsterRemoveRight"},
+		 {FeedbackType::Shout, "Shout"},
+		 {FeedbackType::ShoutFire, "ShoutFire"},
+		 {FeedbackType::ShoutFrost, "ShoutFrost"},
+		 {FeedbackType::ShoutSteam, "ShoutSteam"},
+		 {FeedbackType::ShoutLightning, "ShoutLightning"},
+		 {FeedbackType::HiggsPullLeft, "HiggsPullLeft"},
+		 {FeedbackType::HiggsPullRight, "HiggsPullRight"},
+		 {FeedbackType::PlayerEnvironmentHitLeft, "PlayerEnvironmentHitLeft"},
+		 {FeedbackType::PlayerEnvironmentHitRight, "PlayerEnvironmentHitRight"},
+		 {FeedbackType::PlayerThrowLeft, "PlayerThrowLeft"},
+		 {FeedbackType::PlayerThrowRight, "PlayerThrowRight"},
+		 {FeedbackType::PlayerCatchLeft, "PlayerCatchLeft"},
+		 {FeedbackType::PlayerCatchRight, "PlayerCatchRight"},
+		 {FeedbackType::TravelEffect, "TravelEffect"},
+		 {FeedbackType::Teleport, "Teleport"},
+		 {FeedbackType::EnvironmentRumble, "EnvironmentRumble"},
+		 {FeedbackType::DragonLanding, "DragonLanding"},
+		 {FeedbackType::EquipHelmet, "EquipHelmet"},
+		 {FeedbackType::EquipCuirass, "EquipCuirass"},
+		 {FeedbackType::EquipGauntlets, "EquipGauntlets"},
+		 {FeedbackType::EquipClothing, "EquipClothing"},
+		 {FeedbackType::EquipHood, "EquipHood"},
+		 {FeedbackType::UnequipHelmet, "UnequipHelmet"},
+		 {FeedbackType::UnequipCuirass, "UnequipCuirass"},
+		 {FeedbackType::UnequipGauntlets, "UnequipGauntlets"},
+		 {FeedbackType::UnequipClothing, "UnequipClothing"},
+		 {FeedbackType::UnequipHood, "UnequipHood"},
+		 {FeedbackType::Learned, "Learned"},
+		 {FeedbackType::UnholsterArrowLeftShoulder, "UnholsterArrowLeftShoulder"},
+		 {FeedbackType::UnholsterArrowRightShoulder, "UnholsterArrowRightShoulder"},
+		 {FeedbackType::ConsumableDrink, "ConsumableDrink"},
+		 {FeedbackType::ConsumableFood, "ConsumableFood"},
+		 {FeedbackType::Explosion, "Explosion"},
+		 {FeedbackType::EnvironmentalPoison, "EnvironmentalPoison"},
+		 {FeedbackType::EnvironmentalFire, "EnvironmentalFire"},
+		 {FeedbackType::EnvironmentalElectric, "EnvironmentalElectric"},
+		 {FeedbackType::EnvironmentalFrost, "EnvironmentalFrost"},
+		 {FeedbackType::EnvironmentalFireCloak, "EnvironmentalFireCloak"},
+		 {FeedbackType::EnvironmentalElectricCloak, "EnvironmentalElectricCloak"},
+		 {FeedbackType::EnvironmentalFrostCloak, "EnvironmentalFrostCloak"},
+		 {FeedbackType::TentacleAttack, "TentacleAttack"},
+		 {FeedbackType::GiantStomp, "GiantStomp"},
+		 {FeedbackType::GiantClubLeft, "GiantClubLeft"},
+		 {FeedbackType::GiantClubRight, "GiantClubRight"},
+		 {FeedbackType::UnarmedDefault, "UnarmedDefault"},
+		 {FeedbackType::UnarmedDragon, "UnarmedDragon"},
+		 {FeedbackType::UnarmedFrostbiteSpider, "UnarmedFrostbiteSpider"},
+		 {FeedbackType::UnarmedSabreCat, "UnarmedSabreCat"},
+		 {FeedbackType::UnarmedSkeever, "UnarmedSkeever"},
+		 {FeedbackType::UnarmedSlaughterfish, "UnarmedSlaughterfish"},
+		 {FeedbackType::UnarmedWisp, "UnarmedWisp"},
+		 {FeedbackType::UnarmedDragonPriest, "UnarmedDragonPriest"},
+		 {FeedbackType::UnarmedDraugr, "UnarmedDraugr"},
+		 {FeedbackType::UnarmedWolf, "UnarmedWolf"},
+		 {FeedbackType::UnarmedGiant, "UnarmedGiant"},
+		 {FeedbackType::UnarmedIceWraith, "UnarmedIceWraith"},
+		 {FeedbackType::UnarmedChaurus, "UnarmedChaurus"},
+		 {FeedbackType::UnarmedMammoth, "UnarmedMammoth"},
+		 {FeedbackType::UnarmedFrostAtronach, "UnarmedFrostAtronach"},
+		 {FeedbackType::UnarmedFalmer, "UnarmedFalmer"},
+		 {FeedbackType::UnarmedHorse, "UnarmedHorse"},
+		 {FeedbackType::UnarmedStormAtronach, "UnarmedStormAtronach"},
+		 {FeedbackType::UnarmedElk, "UnarmedElk"},
+		 {FeedbackType::UnarmedDwarvenSphere, "UnarmedDwarvenSphere"},
+		 {FeedbackType::UnarmedDwarvenSteam, "UnarmedDwarvenSteam"},
+		 {FeedbackType::UnarmedDwarvenSpider, "UnarmedDwarvenSpider"},
+		 {FeedbackType::UnarmedBear, "UnarmedBear"},
+		 {FeedbackType::UnarmedFlameAtronach, "UnarmedFlameAtronach"},
+		 {FeedbackType::UnarmedWitchlight, "UnarmedWitchlight"},
+		 {FeedbackType::UnarmedHorker, "UnarmedHorker"},
+		 {FeedbackType::UnarmedTroll, "UnarmedTroll"},
+		 {FeedbackType::UnarmedHagraven, "UnarmedHagraven"},
+		 {FeedbackType::UnarmedSpriggan, "UnarmedSpriggan"},
+		 {FeedbackType::UnarmedMudcrab, "UnarmedMudcrab"},
+		 {FeedbackType::UnarmedWerewolf, "UnarmedWerewolf"},
+		 {FeedbackType::UnarmedChaurusFlyer, "UnarmedChaurusFlyer"},
+		 {FeedbackType::UnarmedGargoyle, "UnarmedGargoyle"},
+		 {FeedbackType::UnarmedRiekling, "UnarmedRiekling"},
+		 {FeedbackType::UnarmedScrib, "UnarmedScrib"},
+		 {FeedbackType::UnarmedSeeker, "UnarmedSeeker"},
+		 {FeedbackType::UnarmedMountedRiekling, "UnarmedMountedRiekling"},
+		 {FeedbackType::UnarmedNetch, "UnarmedNetch"},
+		 {FeedbackType::UnarmedBenthicLurker, "UnarmedBenthicLurker"},
+		 {FeedbackType::DefaultHead, "DefaultHead"},
+		 {FeedbackType::UnarmedHead, "UnarmedHead"},
+		 {FeedbackType::RangedHead, "RangedHead"},
+		 {FeedbackType::MeleeHead, "MeleeHead"},
+		 {FeedbackType::MagicHeadFire, "MagicHeadFire"},
+		 {FeedbackType::MagicHeadShock, "MagicHeadShock"},
+		 {FeedbackType::MagicHeadIce, "MagicHeadIce"},
+		 {FeedbackType::MagicHeadAlteration, "MagicHeadAlteration"},
+		 {FeedbackType::MagicHeadIllusion, "MagicHeadIllusion"},
+		 {FeedbackType::MagicHeadRestoration, "MagicHeadRestoration"},
+		 {FeedbackType::RangedLeftArm, "RangedLeftArm"},
+		 {FeedbackType::RangedRightArm, "RangedRightArm"},
+		 {FeedbackType::MagicLeftArmFire, "MagicLeftArmFire"},
+		 {FeedbackType::MagicLeftArmShock, "MagicLeftArmShock"},
+		 {FeedbackType::MagicLeftArmIce, "MagicLeftArmIce"},
+		 {FeedbackType::MagicLeftArmAlteration, "MagicLeftArmAlteration"},
+		 {FeedbackType::MagicLeftArmIllusion, "MagicLeftArmIllusion"},
+		 {FeedbackType::MagicLeftArmRestoration, "MagicLeftArmRestoration"},
+		 {FeedbackType::MagicRightArmFire, "MagicRightArmFire"},
+		 {FeedbackType::MagicRightArmShock, "MagicRightArmShock"},
+		 {FeedbackType::MagicRightArmIce, "MagicRightArmIce"},
+		 {FeedbackType::MagicRightArmAlteration, "MagicRightArmAlteration"},
+		 {FeedbackType::MagicRightArmIllusion, "MagicRightArmIllusion"},
+		 {FeedbackType::MagicRightArmRestoration, "MagicRightArmRestoration"},
+		 {FeedbackType::HorseRidingSlow, "HorseRidingSlow"},
+		 {FeedbackType::HorseRiding, "HorseRiding"},
+		 {FeedbackType::FallEffect, "FallEffect"},
+		 {FeedbackType::SwimVest20, "SwimVest20"},
+		 {FeedbackType::SwimVest40, "SwimVest40"},
+		 {FeedbackType::SwimVest60, "SwimVest60"},
+		 {FeedbackType::SwimVest80, "SwimVest80"},
+		 {FeedbackType::SwimVest100, "SwimVest100"},
+		 {FeedbackType::DrowningEffectVest, "DrowningEffectVest"},
+		 {FeedbackType::DrowningEffectHead, "DrowningEffectHead"},
+		 {FeedbackType::Wind, "Wind"},
+		 {FeedbackType::MagicArmorSpell, "MagicArmorSpell"},
+		 {FeedbackType::SpellWheelOpenRight, "SpellWheelOpenRight"},
+		 {FeedbackType::SpellWheelOpenLeft, "SpellWheelOpenLeft"},
+		 {FeedbackType::Default, "Default"},
+	};
+
 	std::string feedbackTypeToString(FeedbackType feedbackType) {
-		switch (feedbackType) {
-		case FeedbackType::NoFeedback: return "NoFeedback";
-		case FeedbackType::MeleeSwordRight: return "MeleeSwordRight";
-		case FeedbackType::MeleeAxeRight: return "MeleeAxeRight";
-		case FeedbackType::MeleeMaceRight: return "MeleeMaceRight";
-		case FeedbackType::MeleeDaggerRight: return "MeleeDaggerRight";
-		case FeedbackType::Melee2HAxeRight: return "Melee2HAxeRight";
-		case FeedbackType::Melee2HSwordRight: return "Melee2HSwordRight";
-		case FeedbackType::MeleeSwordLeft: return "MeleeSwordLeft";
-		case FeedbackType::MeleeAxeLeft: return "MeleeAxeLeft";
-		case FeedbackType::MeleeMaceLeft: return "MeleeMaceLeft";
-		case FeedbackType::MeleeDaggerLeft: return "MeleeDaggerLeft";
-		case FeedbackType::Melee2HAxeLeft: return "Melee2HAxeLeft";
-		case FeedbackType::Melee2HSwordLeft: return "Melee2HSwordLeft";
-		case FeedbackType::MeleeFist: return "MeleeFist";
-		case FeedbackType::MeleeBash: return "MeleeBash";
-		case FeedbackType::MeleePowerAttack: return "MeleePowerAttack";
-		case FeedbackType::Ranged: return "Ranged";
-		case FeedbackType::MagicFire: return "MagicFire";
-		case FeedbackType::MagicShock: return "MagicShock";
-		case FeedbackType::MagicIce: return "MagicIce";
-		case FeedbackType::MagicAlteration: return "MagicAlteration";
-		case FeedbackType::MagicIllusion: return "MagicIllusion";
-		case FeedbackType::MagicRestoration: return "MagicRestoration";
-		case FeedbackType::MagicPoison: return "MagicPoison";
-		case FeedbackType::MagicOther: return "MagicOther";
-		case FeedbackType::MagicContinuousFire: return "MagicContinuousFire";
-		case FeedbackType::MagicContinuousShock: return "MagicContinuousShock";
-		case FeedbackType::MagicContinuousIce: return "MagicContinuousIce";
-		case FeedbackType::MagicContinuousAlteration: return "MagicContinuousAlteration";
-		case FeedbackType::MagicContinuousIllusion: return "MagicContinuousIllusion";
-		case FeedbackType::MagicContinuousRestoration: return "MagicContinuousRestoration";
-		case FeedbackType::MagicContinuousPoison: return "MagicContinuousPoison";
-		case FeedbackType::MagicContinuousOther: return "MagicContinuousOther";
-		case FeedbackType::HeartBeat: return "HeartBeat";
-		case FeedbackType::HeartBeatFast: return "HeartBeatFast";
-		case FeedbackType::GreybeardPowerAbsorb: return "GreybeardPowerAbsorb";
-		case FeedbackType::DragonSoul: return "DragonSoul";
-		case FeedbackType::WordWall: return "WordWall";
-		case FeedbackType::PlayerSpellFireLeft: return "PlayerSpellFireLeft";
-		case FeedbackType::PlayerSpellIceLeft: return "PlayerSpellIceLeft";
-		case FeedbackType::PlayerSpellShockLeft: return "PlayerSpellShockLeft";
-		case FeedbackType::PlayerSpellAlterationLeft: return "PlayerSpellAlterationLeft";
-		case FeedbackType::PlayerSpellIllusionLeft: return "PlayerSpellIllusionLeft";
-		case FeedbackType::PlayerSpellLightLeft: return "PlayerSpellLightLeft";
-		case FeedbackType::PlayerSpellRestorationLeft: return "PlayerSpellRestorationLeft";
-		case FeedbackType::PlayerSpellWardLeft: return "PlayerSpellWardLeft";
-		case FeedbackType::PlayerSpellConjurationLeft: return "PlayerSpellConjurationLeft";
-		case FeedbackType::PlayerSpellOtherLeft: return "PlayerSpellOtherLeft";
-		case FeedbackType::PlayerSpellFireRight: return "PlayerSpellFireRight";
-		case FeedbackType::PlayerSpellIceRight: return "PlayerSpellIceRight";
-		case FeedbackType::PlayerSpellShockRight: return "PlayerSpellShockRight";
-		case FeedbackType::PlayerSpellAlterationRight: return "PlayerSpellAlterationRight";
-		case FeedbackType::PlayerSpellIllusionRight: return "PlayerSpellIllusionRight";
-		case FeedbackType::PlayerSpellLightRight: return "PlayerSpellLightRight";
-		case FeedbackType::PlayerSpellRestorationRight: return "PlayerSpellRestorationRight";
-		case FeedbackType::PlayerSpellWardRight: return "PlayerSpellWardRight";
-		case FeedbackType::PlayerSpellConjurationRight: return "PlayerSpellConjurationRight";
-		case FeedbackType::PlayerSpellOtherRight: return "PlayerSpellOtherRight";
-		case FeedbackType::PlayerPowerAttackLeft: return "PlayerPowerAttackLeft";
-		case FeedbackType::PlayerBashLeft: return "PlayerBashLeft";
-		case FeedbackType::PlayerAttackLeft: return "PlayerAttackLeft";
-		case FeedbackType::PlayerPowerAttackRight: return "PlayerPowerAttackRight";
-		case FeedbackType::PlayerBashRight: return "PlayerBashRight";
-		case FeedbackType::PlayerAttackRight: return "PlayerAttackRight";
-		case FeedbackType::PlayerBlockLeft: return "PlayerBlockLeft";
-		case FeedbackType::PlayerBlockRight: return "PlayerBlockRight";
-		case FeedbackType::PlayerBowPullLeft: return "PlayerBowPullLeft";
-		case FeedbackType::PlayerBowPullRight: return "PlayerBowPullRight";
-		case FeedbackType::PlayerBowHoldLeft: return "PlayerBowHoldLeft";
-		case FeedbackType::PlayerBowHoldRight: return "PlayerBowHoldRight";
-		case FeedbackType::PlayerShout: return "PlayerShout";
-		case FeedbackType::PlayerShoutBindHands: return "PlayerShoutBindHands";
-		case FeedbackType::PlayerShoutBindVest: return "PlayerShoutBindVest";
-		case FeedbackType::PlayerCrossbowFireLeft: return "PlayerCrossbowFireLeft";
-		case FeedbackType::PlayerCrossbowFireRight: return "PlayerCrossbowFireRight";
-		case FeedbackType::PlayerCrossbowKickbackLeft: return "PlayerCrossbowKickbackLeft";
-		case FeedbackType::PlayerCrossbowKickbackRight: return "PlayerCrossbowKickbackRight";
-		case FeedbackType::Bite: return "Bite";
-		case FeedbackType::SleeveHolsterStoreLeft: return "SleeveHolsterStoreLeft";
-		case FeedbackType::SleeveHolsterStoreRight: return "SleeveHolsterStoreRight";
-		case FeedbackType::SleeveHolsterRemoveLeft: return "SleeveHolsterRemoveLeft";
-		case FeedbackType::SleeveHolsterRemoveRight: return "SleeveHolsterRemoveRight";
-		case FeedbackType::BackpackStoreLeft: return "BackpackStoreLeft";
-		case FeedbackType::BackpackStoreRight: return "BackpackStoreRight";
-		case FeedbackType::BackpackRemoveLeft: return "BackpackRemoveLeft";
-		case FeedbackType::BackpackRemoveRight: return "BackpackRemoveRight";
-		case FeedbackType::StomachStore: return "StomachStore";
-		case FeedbackType::StomachRemove: return "StomachRemove";
-		case FeedbackType::ChestStore: return "ChestStore";
-		case FeedbackType::ChestRemove: return "ChestRemove";
-		case FeedbackType::HipHolsterStoreLeft: return "HipHolsterStoreLeft";
-		case FeedbackType::HipHolsterStoreRight: return "HipHolsterStoreRight";
-		case FeedbackType::HipHolsterRemoveLeft: return "HipHolsterRemoveLeft";
-		case FeedbackType::HipHolsterRemoveRight: return "HipHolsterRemoveRight";
-		case FeedbackType::Shout: return "Shout";
-		case FeedbackType::ShoutFire: return "ShoutFire";
-		case FeedbackType::ShoutFrost: return "ShoutFrost";
-		case FeedbackType::ShoutSteam: return "ShoutSteam";
-		case FeedbackType::ShoutLightning: return "ShoutLightning";
-		case FeedbackType::HiggsPullLeft: return "HiggsPullLeft";
-		case FeedbackType::HiggsPullRight: return "HiggsPullRight";
-		case FeedbackType::PlayerEnvironmentHitLeft: return "PlayerEnvironmentHitLeft";
-		case FeedbackType::PlayerEnvironmentHitRight: return "PlayerEnvironmentHitRight";
-		case FeedbackType::PlayerThrowLeft: return "PlayerThrowLeft";
-		case FeedbackType::PlayerThrowRight: return "PlayerThrowRight";
-		case FeedbackType::PlayerCatchLeft: return "PlayerCatchLeft";
-		case FeedbackType::PlayerCatchRight: return "PlayerCatchRight";
-		case FeedbackType::TravelEffect: return "TravelEffect";
-		case FeedbackType::Teleport: return "Teleport";
-		case FeedbackType::EnvironmentRumble: return "EnvironmentRumble";
-		case FeedbackType::DragonLanding: return "DragonLanding";
-		case FeedbackType::EquipHelmet: return "EquipHelmet";
-		case FeedbackType::EquipCuirass: return "EquipCuirass";
-		case FeedbackType::EquipGauntlets: return "EquipGauntlets";
-		case FeedbackType::EquipClothing: return "EquipClothing";
-		case FeedbackType::EquipHood: return "EquipHood";
-		case FeedbackType::UnequipHelmet: return "UnequipHelmet";
-		case FeedbackType::UnequipCuirass: return "UnequipCuirass";
-		case FeedbackType::UnequipGauntlets: return "UnequipGauntlets";
-		case FeedbackType::UnequipClothing: return "UnequipClothing";
-		case FeedbackType::UnequipHood: return "UnequipHood";
-		case FeedbackType::Learned: return "Learned";
-		case FeedbackType::UnholsterArrowLeftShoulder: return "UnholsterArrowLeftShoulder";
-		case FeedbackType::UnholsterArrowRightShoulder: return "UnholsterArrowRightShoulder";
-		case FeedbackType::ConsumableDrink: return "ConsumableDrink";
-		case FeedbackType::ConsumableFood: return "ConsumableFood";
-		case FeedbackType::Explosion: return "Explosion";
-		case FeedbackType::EnvironmentalPoison: return "EnvironmentalPoison";
-		case FeedbackType::EnvironmentalFire: return "EnvironmentalFire";
-		case FeedbackType::EnvironmentalElectric: return "EnvironmentalElectric";
-		case FeedbackType::EnvironmentalFrost: return "EnvironmentalFrost";
-		case FeedbackType::EnvironmentalFireCloak: return "EnvironmentalFireCloak";
-		case FeedbackType::EnvironmentalElectricCloak: return "EnvironmentalElectricCloak";
-		case FeedbackType::EnvironmentalFrostCloak: return "EnvironmentalFrostCloak";
-		case FeedbackType::TentacleAttack: return "TentacleAttack";
-		case FeedbackType::GiantStomp: return "GiantStomp";
-		case FeedbackType::GiantClubLeft: return "GiantClubLeft";
-		case FeedbackType::GiantClubRight: return "GiantClubRight";
-		case FeedbackType::UnarmedDefault: return "UnarmedDefault";
-		case FeedbackType::UnarmedDragon: return "UnarmedDragon";
-		case FeedbackType::UnarmedFrostbiteSpider: return "UnarmedFrostbiteSpider";
-		case FeedbackType::UnarmedSabreCat: return "UnarmedSabreCat";
-		case FeedbackType::UnarmedSkeever: return "UnarmedSkeever";
-		case FeedbackType::UnarmedSlaughterfish: return "UnarmedSlaughterfish";
-		case FeedbackType::UnarmedWisp: return "UnarmedWisp";
-		case FeedbackType::UnarmedDragonPriest: return "UnarmedDragonPriest";
-		case FeedbackType::UnarmedDraugr: return "UnarmedDraugr";
-		case FeedbackType::UnarmedWolf: return "UnarmedWolf";
-		case FeedbackType::UnarmedGiant: return "UnarmedGiant";
-		case FeedbackType::UnarmedIceWraith: return "UnarmedIceWraith";
-		case FeedbackType::UnarmedChaurus: return "UnarmedChaurus";
-		case FeedbackType::UnarmedMammoth: return "UnarmedMammoth";
-		case FeedbackType::UnarmedFrostAtronach: return "UnarmedFrostAtronach";
-		case FeedbackType::UnarmedFalmer: return "UnarmedFalmer";
-		case FeedbackType::UnarmedHorse: return "UnarmedHorse";
-		case FeedbackType::UnarmedStormAtronach: return "UnarmedStormAtronach";
-		case FeedbackType::UnarmedElk: return "UnarmedElk";
-		case FeedbackType::UnarmedDwarvenSphere: return "UnarmedDwarvenSphere";
-		case FeedbackType::UnarmedDwarvenSteam: return "UnarmedDwarvenSteam";
-		case FeedbackType::UnarmedDwarvenSpider: return "UnarmedDwarvenSpider";
-		case FeedbackType::UnarmedBear: return "UnarmedBear";
-		case FeedbackType::UnarmedFlameAtronach: return "UnarmedFlameAtronach";
-		case FeedbackType::UnarmedWitchlight: return "UnarmedWitchlight";
-		case FeedbackType::UnarmedHorker: return "UnarmedHorker";
-		case FeedbackType::UnarmedTroll: return "UnarmedTroll";
-		case FeedbackType::UnarmedHagraven: return "UnarmedHagraven";
-		case FeedbackType::UnarmedSpriggan: return "UnarmedSpriggan";
-		case FeedbackType::UnarmedMudcrab: return "UnarmedMudcrab";
-		case FeedbackType::UnarmedWerewolf: return "UnarmedWerewolf";
-		case FeedbackType::UnarmedChaurusFlyer: return "UnarmedChaurusFlyer";
-		case FeedbackType::UnarmedGargoyle: return "UnarmedGargoyle";
-		case FeedbackType::UnarmedRiekling: return "UnarmedRiekling";
-		case FeedbackType::UnarmedScrib: return "UnarmedScrib";
-		case FeedbackType::UnarmedSeeker: return "UnarmedSeeker";
-		case FeedbackType::UnarmedMountedRiekling: return "UnarmedMountedRiekling";
-		case FeedbackType::UnarmedNetch: return "UnarmedNetch";
-		case FeedbackType::UnarmedBenthicLurker: return "UnarmedBenthicLurker";
-		case FeedbackType::DefaultHead: return "DefaultHead";
-		case FeedbackType::UnarmedHead: return "UnarmedHead";
-		case FeedbackType::RangedHead: return "RangedHead";
-		case FeedbackType::MeleeHead: return "MeleeHead";
-		case FeedbackType::MagicHeadFire: return "MagicHeadFire";
-		case FeedbackType::MagicHeadShock: return "MagicHeadShock";
-		case FeedbackType::MagicHeadIce: return "MagicHeadIce";
-		case FeedbackType::MagicHeadAlteration: return "MagicHeadAlteration";
-		case FeedbackType::MagicHeadIllusion: return "MagicHeadIllusion";
-		case FeedbackType::MagicHeadRestoration: return "MagicHeadRestoration";
-		case FeedbackType::RangedLeftArm: return "RangedLeftArm";
-		case FeedbackType::RangedRightArm: return "RangedRightArm";
-		case FeedbackType::MagicLeftArmFire: return "MagicLeftArmFire";
-		case FeedbackType::MagicLeftArmShock: return "MagicLeftArmShock";
-		case FeedbackType::MagicLeftArmIce: return "MagicLeftArmIce";
-		case FeedbackType::MagicLeftArmAlteration: return "MagicLeftArmAlteration";
-		case FeedbackType::MagicLeftArmIllusion: return "MagicLeftArmIllusion";
-		case FeedbackType::MagicLeftArmRestoration: return "MagicLeftArmRestoration";
-		case FeedbackType::MagicRightArmFire: return "MagicRightArmFire";
-		case FeedbackType::MagicRightArmShock: return "MagicRightArmShock";
-		case FeedbackType::MagicRightArmIce: return "MagicRightArmIce";
-		case FeedbackType::MagicRightArmAlteration: return "MagicRightArmAlteration";
-		case FeedbackType::MagicRightArmIllusion: return "MagicRightArmIllusion";
-		case FeedbackType::MagicRightArmRestoration: return "MagicRightArmRestoration";
-		case FeedbackType::HorseRidingSlow: return "HorseRidingSlow";
-		case FeedbackType::HorseRiding: return "HorseRiding";
-		case FeedbackType::FallEffect: return "FallEffect";
-		case FeedbackType::SwimVest20: return "SwimVest20";
-		case FeedbackType::SwimVest40: return "SwimVest40";
-		case FeedbackType::SwimVest60: return "SwimVest60";
-		case FeedbackType::SwimVest80: return "SwimVest80";
-		case FeedbackType::SwimVest100: return "SwimVest100";
-		case FeedbackType::DrowningEffectVest: return "DrowningEffectVest";
-		case FeedbackType::DrowningEffectHead: return "DrowningEffectHead";
-		case FeedbackType::Wind: return "Wind";
-		case FeedbackType::MagicArmorSpell: return "MagicArmorSpell";
-		case FeedbackType::SpellWheelOpen: return "SpellWheelOpen";
-		case FeedbackType::Default: return "Default";
-		default: return "Unknown";
+		// Find the corresponding string in the map
+		auto it = feedbackStringMap.find(feedbackType);
+		if (it != feedbackStringMap.end()) {
+			return it->second;
+		}
+		else {
+			return "Unknown";
 		}
 	}
 
+	static std::unordered_map<std::string, FeedbackType> stringToFeedbackMap = {};
+
+	std::unordered_map<std::string, FeedbackType> generateStringToFeedbackTypeMap(const std::unordered_map<FeedbackType, std::string>& feedbackStringMap) {
+		std::unordered_map<std::string, FeedbackType> reverseMap;
+		for (auto& it : feedbackStringMap) {
+			reverseMap[it.second] = it.first;
+		}
+		return reverseMap;
+	}
+
+	FeedbackType stringToFeedbackType(std::string str) {
+		if (stringToFeedbackMap.size() == 0) {
+			stringToFeedbackMap = generateStringToFeedbackTypeMap(feedbackStringMap);
+		}
+
+		// Find the corresponding string in the map
+		auto it = stringToFeedbackMap.find(str);
+		if (it != stringToFeedbackMap.end()) {
+			return it->second;
+		}
+		else {
+			return FeedbackType::Default;
+		}
+	}
 
 	void FillFeedbackList()
 	{
@@ -932,7 +919,8 @@ namespace TactsuitVR {
 		feedbackMap[FeedbackType::MagicArmorSpell] = Feedback(FeedbackType::MagicArmorSpell, "MagicArmorSpell_");
 
 
-		feedbackMap[FeedbackType::SpellWheelOpen] = Feedback(FeedbackType::SpellWheelOpen, "SpellWheelOpen_");
+		feedbackMap[FeedbackType::SpellWheelOpenLeft] = Feedback(FeedbackType::SpellWheelOpenLeft, "SpellWheelOpenLeft_");
+		feedbackMap[FeedbackType::SpellWheelOpenRight] = Feedback(FeedbackType::SpellWheelOpenRight, "SpellWheelOpenRight_");
 
 		feedbackMap[FeedbackType::Default] = Feedback(FeedbackType::Default, "Default_"); //1		
 	}

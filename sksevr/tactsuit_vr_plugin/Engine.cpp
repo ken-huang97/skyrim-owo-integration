@@ -3375,7 +3375,7 @@ namespace TactsuitVR
 				const int index = randomGeneratorLowMoreProbable(0, 7, 8, 15, 4);
 				const int pos = randomGenerator(0, 1);
 				const int durationOffset = randomGenerator(0, 30) - 15;
-				// ProvideDotFeedback(pos == 1 ? bhaptics::VestFront : bhaptics::VestBack, index, 30 * rainIntensity * intensityMultiplierRaindropVest, raineffectduration + durationOffset);
+				ProvideDotFeedback(pos == 1 ? OWOGame::MusclesGroup::Front() : OWOGame::MusclesGroup::Back(), index, 30 * rainIntensity * intensityMultiplierRaindropVest, raineffectduration + durationOffset);
 			}
 			Sleep(sleepDuration);
 		}

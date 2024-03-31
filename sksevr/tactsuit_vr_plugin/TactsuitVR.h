@@ -270,7 +270,8 @@ namespace TactsuitVR
 
 		MagicArmorSpell,
 
-		SpellWheelOpen,
+		SpellWheelOpenLeft,
+		SpellWheelOpenRight,
 
 		Default
 	};
@@ -298,7 +299,7 @@ namespace TactsuitVR
 	void FillFeedbackList();
 
 	// void ProvideDotFeedback(bhaptics::PositionType position, int index, int intensity, int durationMillis);
-	void ProvideDotFeedback(OWOGame::Muscle muscle, int index, int intensity, int durationMillis);
+	void ProvideDotFeedback(OWOGame::MusclesGroup muscle, int index, int intensity, int durationMillis);
 	void ProvideHapticFeedback(float locationAngle, float locationHeight, FeedbackType effect, float intensityMultiplier = 1.0f, bool waitToPlay = false, bool playInMenu = false);
 	void ProvideHapticFeedbackThread(float locationAngle, float locationHeight, FeedbackType effect, float intensityMultiplier = 1.0f, bool waitToPlay = false, bool playInMenu = false);
 	void PauseHapticFeedBack(FeedbackType effect);
@@ -324,4 +325,5 @@ namespace TactsuitVR
 	OWOGame::Muscle angleToMuscle(float locationAngle, float locationHeight);
 
 	std::string feedbackTypeToString(FeedbackType feedbackType);
+	FeedbackType stringToFeedbackType(std::string str);
 }

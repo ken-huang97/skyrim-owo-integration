@@ -1,4 +1,5 @@
 #include "tactsuitpluginapi.h"
+#include "TactsuitVR.h"
 
 using namespace tactsuitPluginApi;
 
@@ -35,6 +36,9 @@ void tactsuitPluginApi::modMessageHandler(SKSEMessagingInterface::Message* messa
 
 void TactsuitInterface001::PlayHapticEffect(std::string effectFileName, float locationAngle, float locationHeight, float intensity, bool waitToPlay)
 {
+	_MESSAGE("SKSE mod integrations not working due to debug/release library combinination. Defaulting to SpellWheelOpen");
+	effectFileName = "SpellWhelOpenLeft_1";
+
 	float intensityCalculated = intensity;
 	if(Contains(effectFileName, "PlayerCatch"))
 	{
@@ -60,10 +64,10 @@ void TactsuitInterface001::PlayHapticEffect(std::string effectFileName, float lo
 	TactsuitVR::ProvideHapticFeedbackSpecificFile(locationAngle, locationHeight, effectFileName, intensityCalculated, waitToPlay);
 }
 
-// TODO
 void TactsuitInterface001::StopHapticEffect(std::string effectFileName)
 {
-	//TurnOffKey(effectFileName.c_str());
+	_MESSAGE("PlayHapticEffect received SKSE %s", effectFileName.c_str());
+	TactsuitVR::PauseHapticFeedBack();
 }
 
 // Fetches the version number
