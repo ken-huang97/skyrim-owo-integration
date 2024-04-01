@@ -12,7 +12,7 @@ using namespace OWOGame;
 namespace TactsuitVR {
 	bool systemInitialized = false;
 	bool owoLoopUpdating = false;
-	int owoUpdateWaitMs = 100;
+	int owoUpdateWaitMs = 10;
 
 	float TOLERANCE = 0.00001f;
 
@@ -72,8 +72,8 @@ namespace TactsuitVR {
 		while (owoLoopUpdating) {
 			curConnectionState = owo->UpdateStatus(getTimeSinceStart());
 			if (prevConnectionState != curConnectionState) {
+				_MESSAGE("OWO connection state changed from %s to %s", ToString(prevConnectionState).c_str(), ToString(curConnectionState).c_str());
 				prevConnectionState = curConnectionState;
-				LOG("OWO connection state changed from %s to %s", ToString(prevConnectionState).c_str(), ToString(curConnectionState).c_str());
 			}
 			WaitFor(owoUpdateWaitMs);
 		}
@@ -93,10 +93,11 @@ namespace TactsuitVR {
 			sstream << fs.rdbuf();
 			const std::string tactFileStr(sstream.str());
 
+			//_MESSAGE("Read %s", tactFileStr.c_str());
+
 			sharedPtr<BakedSensation> sensation = std::move(BakedSensationsParser::Parse(tactFileStr));
 			feedbackMap[feedback.feedbackType].feedbackSensations.push_back(sensation);
-
-			_MESSAGE("%f total duration!", sensation->TotalDuration());
+			//_MESSAGE("Read %s", sensation.c_str());
 
 			return sensation;
 			// RegisterFeedbackFromTactFile(tactKey.c_str(), tactFileStr.c_str());
@@ -347,18 +348,28 @@ namespace TactsuitVR {
 				// _MESSAGE("Key: %s  OffsetY: %g  OffsetAngleX: %g  Intensity: %g", key.c_str(), locationHeight, locationAngle, scaleOption.Intensity);
 
 				auto sensationStr = sensation->Stringify();
+
+				_MESSAGE("Stringify says %s", sensationStr.c_str());
+				//_MESSAGE("ToString says %s", sensation->ToString().c_str());
+
+				uniquePtr<Sensation>  tmp;
+
 				if (BakedSensationsParser::CanParse(sensationStr)) {
+					uniquePtr<BakedSensation> tmp2;
+					tmp2 = BakedSensationsParser::Parse(sensationStr);
+					_MESSAGE("BakedSensation Parsed as %s", tmp2->Stringify().c_str());
 
-					owo->Send(BakedSensationsParser::Parse(sensationStr));
-
+					owo->Send(std::move(tmp2));
 				} else if (SensationWithMusclesParser::CanParse(sensationStr)) {
+					_MESSAGE("SensationWithMuscles Parsed");
 
 					std::vector<Muscle> muscles = { angleToMuscle(locationAngle, locationHeight) };
-					owo->Send(SensationWithMusclesParser::Parse(sensationStr)->WithMuscles(muscles));
+					tmp = SensationWithMusclesParser::Parse(sensationStr)->WithMuscles(muscles);
+					owo->Send(std::move(tmp));
 
 				}
 				else {
-
+					_MESSAGE("Sensation Parsed");
 					owo->Send(SensationsParser::Parse(sensationStr));
 				}
 			}

@@ -313,7 +313,7 @@ namespace TactsuitVR
 
 	// bool TactFileRegisterFilename(std::string& filename);
 	void ProvideHapticFeedbackSpecificFile(float locationAngle, float locationHeight, std::string feedbackFileName, float intensityMultiplier, bool waitToPlay);
-	void ProvideHapticFeedbackThreadSpecificFile(float locationAngle, float locationHeight, std::string feedbackFileName, float intensityMultiplier, bool waitToPlay);
+	// void ProvideHapticFeedbackThreadSpecificFile(float locationAngle, float locationHeight, std::string feedbackFileName, float intensityMultiplier, bool waitToPlay);
 
 	void CreateSystem();
 	void owoUpdateLoop();
