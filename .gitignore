@@ -1,4 +1,9 @@
 .vscode/
 .vs/
 common/x64_v143/
-sksevr/
+sksevr/output/
+sksevr/skse64/x64/
+sksevr/skse64_common/x64/
+sksevr/tactsuit_vr_plugin/x64/
+sksevr/x64/
+sksevr/x64_v143/
