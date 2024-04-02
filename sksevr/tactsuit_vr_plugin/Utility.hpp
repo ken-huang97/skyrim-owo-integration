@@ -73,13 +73,30 @@ static inline void skipComments(std::string& str)
 	}
 }
 
-static inline void skipTactExtension(std::string& str)
+static inline std::string stripFileNameUnderscoreAndAfter(std::string str)
 {
-	auto pos = str.find(".tact");
+	size_t pos = str.find('_');
+
+	// Check if there's an underscore
+	if (pos != std::string::npos) {
+		// Return a substring from the beginning to the position before the underscore (excluding the underscore)
+		return str.substr(0, pos);
+	}
+	else {
+		// Return the original string if there's no underscore
+		return str;
+	}
+}
+
+static inline std::string removeOwoExtension(std::string str)
+{
+	auto pos = str.find(".owo");
 	if (pos != std::string::npos)
 	{
 		str.erase(pos);
 	}
+
+	return str;
 }
 
 static inline std::vector<std::string> get_all_files_names_within_folder(std::string folder)

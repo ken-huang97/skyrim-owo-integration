@@ -62,6 +62,7 @@
     <LibraryPath>$(MsBuildProjectDirectory)\lib;$(LibraryPath);</LibraryPath>
     <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(MsBuildProjectDirectory)\lib;$(MsBuildProjectDirectory)\include;$(MsBuildProjectDirectory)\include\bindings\cpp;</IncludePath>
     <SourcePath>$(VC_SourcePath);$(MsBuildProjectDirectory)\lib;</SourcePath>
+    <OutDir>..\..\..\..\mods\bHaptics Tactsuit - SkyrimVR Integration\SKSE\Plugins\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -99,7 +100,8 @@
       <PreprocessorDefinitions>NDEBUG;_WINDOWS;_USRDLL;TACTSUIT_VR_PLUGIN_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)\..;%(AdditionalIncludeDirectories);$(SolutionDir)\tactsuit_vr_plugin\owo\Headers\;</AdditionalIncludeDirectories>
       <ForcedIncludeFiles>common/IPrefix.h</ForcedIncludeFiles>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <WholeProgramOptimization>false</WholeProgramOptimization>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -112,6 +114,7 @@
       </DelayLoadDLLs>
       <RandomizedBaseAddress>
       </RandomizedBaseAddress>
+      <AdditionalLibraryDirectories>$(SolutionDir)tactsuit_vr_plugin\owo</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>copy "$(TargetPath)" "$(SkyrimVRPath)\$(TargetFileName)" /Y</Command>
@@ -119,6 +122,9 @@
     <PostBuildEvent>
       <Message>Installing Tactsuit VR...</Message>
     </PostBuildEvent>
+    <ProjectReference>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
+    </ProjectReference>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="api\collisions\LocalOverlapObject.cpp" />

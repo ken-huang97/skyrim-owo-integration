@@ -22,6 +22,7 @@ namespace TactsuitVR {
 	std::clock_t startTime;
 
 	std::unordered_map<FeedbackType, Feedback> feedbackMap;
+	std::unordered_map<std::string, sharedPtr<BakedSensation>> unknownFeedbackMap;
 
 	std::vector<FeedbackType> spellCastingRight = { FeedbackType::PlayerSpellAlterationRight, FeedbackType::PlayerSpellConjurationRight, FeedbackType::PlayerSpellFireRight, FeedbackType::PlayerSpellIceRight, FeedbackType::PlayerSpellIllusionRight, FeedbackType::PlayerSpellLightRight, FeedbackType::PlayerSpellOtherRight, FeedbackType::PlayerSpellRestorationRight, FeedbackType::PlayerSpellShockRight, FeedbackType::PlayerSpellWardRight };
 	std::vector<FeedbackType> spellCastingLeft = { FeedbackType::PlayerSpellAlterationLeft, FeedbackType::PlayerSpellConjurationLeft, FeedbackType::PlayerSpellFireLeft, FeedbackType::PlayerSpellIceLeft, FeedbackType::PlayerSpellIllusionLeft, FeedbackType::PlayerSpellLightLeft, FeedbackType::PlayerSpellOtherLeft, FeedbackType::PlayerSpellRestorationLeft, FeedbackType::PlayerSpellShockLeft, FeedbackType::PlayerSpellWardLeft };
@@ -56,7 +57,7 @@ namespace TactsuitVR {
 			std::thread owoUpdateThread(owoUpdateLoop);
 			owoUpdateThread.detach();
 
-			LOG("OWO System Initialized 2");
+			LOG("OWO System Initialized");
 		}
 		systemInitialized = true;
 	}
@@ -81,51 +82,50 @@ namespace TactsuitVR {
 
 	sharedPtr<BakedSensation> TactFileRegister(std::string &configPath, std::string &filename, Feedback feedback)
 	{
+		std::string path = configPath;
+		path += "\\";
+		path += filename;
+
+		std::ostringstream sstream;
+		std::ifstream fs(path);
+		sstream << fs.rdbuf();
+		const std::string tactFileStr(sstream.str());
+
+		sharedPtr<BakedSensation> sensation(BakedSensationsParser::Parse(tactFileStr));
+
+
 		if (feedbackMap.find(feedback.feedbackType) != feedbackMap.end())
 		{
-
-			std::string path = configPath;
-			path += "\\";
-			path += filename;
-
-			std::ostringstream sstream;
-			std::ifstream fs(path);
-			sstream << fs.rdbuf();
-			const std::string tactFileStr(sstream.str());
-
-			//_MESSAGE("Read %s", tactFileStr.c_str());
-
-			sharedPtr<BakedSensation> sensation = std::move(BakedSensationsParser::Parse(tactFileStr));
+			_MESSAGE("Added %s to feedback %s", filename.c_str(), feedbackTypeToString(feedback.feedbackType));
 			feedbackMap[feedback.feedbackType].feedbackSensations.push_back(sensation);
-			//_MESSAGE("Read %s", sensation.c_str());
-
-			return sensation;
-			// RegisterFeedbackFromTactFile(tactKey.c_str(), tactFileStr.c_str());
 		}
-
-		return NULL;
+		else {
+			_MESSAGE("ERROR: This should not happend: No feedback in map exists for %s", filename.c_str());
+		}
+		
+		return sensation;
 	}
 
-	// bool TactFileRegisterFilename(std::string& filename)
-	// {
-	// 	std::string	runtimeDirectory = GetRuntimeDirectory();
-	// 	if (!runtimeDirectory.empty())
-	// 	{
-	// 		std::string configPath = runtimeDirectory + "Data\\SKSE\\Plugins\\bHaptics";
-	// 		std::string path = configPath;
-	// 		path += "\\";
-	// 		path += filename;
-	// 		path += ".tact";
-	// 
-	// 		LoadAndRegisterFeedback(filename.c_str(), path.c_str());
-	// 		return true;
-	// 	}
-	// 	else
-	// 	{
-	// 		return false;
-	// 	}
-	// }
+	sharedPtr<BakedSensation> TactFileRegisterFilename(std::string& configPath, std::string& filename)
+	{
+		std::string path = configPath;
+		path += "\\";
+		path += filename;
 
+		std::ostringstream sstream;
+		std::ifstream fs(path);
+		sstream << fs.rdbuf();
+		const std::string tactFileStr(sstream.str());
+
+		sharedPtr<BakedSensation> sensation(BakedSensationsParser::Parse(tactFileStr));
+
+		if (unknownFeedbackMap.find(filename) != unknownFeedbackMap.end()) {
+			_MESSAGE("Duplicate unknown files found for %s. Overwriting", filename.c_str());
+		}
+		unknownFeedbackMap[removeOwoExtension(filename)] = sensation;
+
+		return sensation;
+	}
 
 	owoVector<owoString> ReadSensationFiles()
 	{
@@ -148,6 +148,9 @@ namespace TactsuitVR {
 				LOG("File found: %s", filename.c_str());
 
 				bool found = false;
+
+
+
 				for (std::pair<FeedbackType, Feedback> element : feedbackMap)
 				{
 					if (stringStartsWith(filename, element.second.prefix))
@@ -158,7 +161,7 @@ namespace TactsuitVR {
 							break;
 						}
 
-						ret.push_back(sensation->ToString());
+						ret.push_back(sensation->Stringify());
 						LOG("Successfully added %s to %s", filename.c_str(), element.second.prefix.c_str());
 
 						found = true;
@@ -166,12 +169,12 @@ namespace TactsuitVR {
 					}
 				}
 
-				// if (!found)
-				// {
-				// 	LOG("File category unknown: %s", filename.c_str());
-				// 	skipTactExtension(filename);
-				// 	TactFileRegisterFilename(filename);
-				// }
+				if (!found && filename.find(".owo") != std::string::npos)
+				{
+					LOG("File feedback unknown: %s", filename.c_str());
+					sharedPtr<BakedSensation> sensation(TactFileRegisterFilename(configPath, filename));
+					ret.push_back(sensation->Stringify());
+				}
 			}
 		}
 
@@ -311,6 +314,26 @@ namespace TactsuitVR {
 		}
 	}
 
+
+	std::string unbake(const std::string& input) {
+		// Split the string by tilde (~)
+		std::vector<std::string> parts;
+		std::string token;
+		std::istringstream stream(input);
+		while (std::getline(stream, token, '~')) {
+			parts.push_back(token);
+		}
+
+		// Check if there are at least three parts (including the empty string before the first tilde)
+		if (parts.size() >= 4) {
+			// Return the third part (excluding surrounding tildes)
+			return parts[2];
+		}
+		else {
+			return input;
+		}
+	}
+
 	void ProvideHapticFeedbackThread(float locationAngle, float locationHeight, FeedbackType effect, float intensityMultiplier, bool waitToPlay, bool playInMenu)
 	{
 		_MESSAGE("ProvideHapticFeedbackThread %s %f %f", feedbackTypeToString(effect).c_str(), locationAngle, locationHeight);
@@ -342,35 +365,18 @@ namespace TactsuitVR {
 				else if (locationHeight > 0.45f)
 					locationHeight = 0.45f;
 
+				//TODO only need to store the ID and whether it needs muscle?
 				std::vector<std::shared_ptr<BakedSensation>> & feedbackSensations = feedbackMap[effect].feedbackSensations;
 				std::shared_ptr<BakedSensation> sensation(feedbackSensations[(randi(0, feedbackSensations.size()-1))]);
 
-				// _MESSAGE("Key: %s  OffsetY: %g  OffsetAngleX: %g  Intensity: %g", key.c_str(), locationHeight, locationAngle, scaleOption.Intensity);
+				auto sensationWithId = SensationsParser::Parse(std::to_string(sensation->id));
 
-				auto sensationStr = sensation->Stringify();
-
-				_MESSAGE("Stringify says %s", sensationStr.c_str());
-				//_MESSAGE("ToString says %s", sensation->ToString().c_str());
-
-				uniquePtr<Sensation>  tmp;
-
-				if (BakedSensationsParser::CanParse(sensationStr)) {
-					uniquePtr<BakedSensation> tmp2;
-					tmp2 = BakedSensationsParser::Parse(sensationStr);
-					_MESSAGE("BakedSensation Parsed as %s", tmp2->Stringify().c_str());
-
-					owo->Send(std::move(tmp2));
-				} else if (SensationWithMusclesParser::CanParse(sensationStr)) {
-					_MESSAGE("SensationWithMuscles Parsed");
-
+				if (SensationWithMusclesParser::CanParse(sensation->Stringify())) {
 					std::vector<Muscle> muscles = { angleToMuscle(locationAngle, locationHeight) };
-					tmp = SensationWithMusclesParser::Parse(sensationStr)->WithMuscles(muscles);
-					owo->Send(std::move(tmp));
-
+					owo->Send(sensationWithId->WithMuscles(muscles));
 				}
 				else {
-					_MESSAGE("Sensation Parsed");
-					owo->Send(SensationsParser::Parse(sensationStr));
+					owo->Send(sensationWithId);
 				}
 			}
 			else
@@ -395,13 +401,53 @@ namespace TactsuitVR {
 
 	void ProvideHapticFeedbackSpecificFile(float locationAngle, float locationHeight, std::string feedbackFileName, float intensityMultiplier, bool waitToPlay)
 	{
-		_MESSAGE("ProvideHapticFeedbackSpecificFile %s", feedbackFileName.c_str());
-		auto feedback = stringToFeedbackType(remove_after_underscore(feedbackFileName));
+		auto feedbackType = stringToFeedbackType(remove_after_underscore(feedbackFileName));
 
-		return ProvideHapticFeedback(locationAngle, locationHeight, feedback, intensityMultiplier, waitToPlay);
+		if (feedbackType != FeedbackType::Default) {
+			return ProvideHapticFeedback(locationAngle, locationHeight, feedbackType, intensityMultiplier, waitToPlay);
+		} else {
+			return ProvideHapticFeedbackThreadSpecificFile(locationAngle, locationHeight, feedbackFileName, intensityMultiplier, waitToPlay);
+		}
 	}
 
+	void ProvideHapticFeedbackThreadSpecificFile(float locationAngle, float locationHeight, std::string feedbackFileName, float intensityMultiplier, bool waitToPlay)
+	{
+		if (intensityMultiplier < TOLERANCE)
+			return;
 
+		if (isGameStoppedNoDialogue())
+		{
+			return;
+		}
+
+		if (!systemInitialized)
+			CreateSystem();
+
+		//if (waitToPlay)
+		//{
+		//	if (IsPlayingKey(feedbackFileName.c_str()))
+		//		return;
+		//}
+
+		if (locationHeight < -0.5f)
+			locationHeight = -0.5f;
+		else if (locationHeight > 0.5f)
+			locationHeight = 0.5f;
+
+		auto sensation = unknownFeedbackMap[feedbackFileName];
+		// _MESSAGE("Sending id %d", sensation->id);
+		auto sensationWithId = SensationsParser::Parse(std::to_string(sensation->id));
+
+		if (SensationWithMusclesParser::CanParse(sensation->Stringify())) {
+			std::vector<Muscle> muscles = { angleToMuscle(locationAngle, locationHeight) };
+			owo->Send(sensationWithId->WithMuscles(muscles));
+		}
+		else {
+			owo->Send(sensationWithId);
+		}
+
+		//LOG("ProvideHapticFeedback submit successful");
+	}
 
 	// Thank you florianfahrenberger for this function
 	Muscle angleToMuscle(float locationAngle, float locationHeight) {
@@ -685,6 +731,7 @@ namespace TactsuitVR {
 			return it->second;
 		}
 		else {
+			_MESSAGE("Failed to find %s, defaulting", str.c_str());
 			return FeedbackType::Default;
 		}
 	}

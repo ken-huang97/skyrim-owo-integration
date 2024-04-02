@@ -298,7 +298,6 @@ namespace TactsuitVR
 
 	void FillFeedbackList();
 
-	// void ProvideDotFeedback(bhaptics::PositionType position, int index, int intensity, int durationMillis);
 	void ProvideDotFeedback(OWOGame::MusclesGroup muscle, int index, int intensity, int durationMillis);
 	void ProvideHapticFeedback(float locationAngle, float locationHeight, FeedbackType effect, float intensityMultiplier = 1.0f, bool waitToPlay = false, bool playInMenu = false);
 	void ProvideHapticFeedbackThread(float locationAngle, float locationHeight, FeedbackType effect, float intensityMultiplier = 1.0f, bool waitToPlay = false, bool playInMenu = false);
@@ -311,9 +310,8 @@ namespace TactsuitVR
 	void LateFeedback(float locationAngle, FeedbackType feedback, float intensity, int sleepAmount, int count, bool waitToPlay, bool playInMenu);
 	bool IsPlayingKeyAll(FeedbackType effect);
 
-	// bool TactFileRegisterFilename(std::string& filename);
 	void ProvideHapticFeedbackSpecificFile(float locationAngle, float locationHeight, std::string feedbackFileName, float intensityMultiplier, bool waitToPlay);
-	// void ProvideHapticFeedbackThreadSpecificFile(float locationAngle, float locationHeight, std::string feedbackFileName, float intensityMultiplier, bool waitToPlay);
+	void ProvideHapticFeedbackThreadSpecificFile(float locationAngle, float locationHeight, std::string feedbackFileName, float intensityMultiplier, bool waitToPlay);
 
 	void CreateSystem();
 	void owoUpdateLoop();

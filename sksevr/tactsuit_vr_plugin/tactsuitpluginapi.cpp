@@ -36,39 +36,34 @@ void tactsuitPluginApi::modMessageHandler(SKSEMessagingInterface::Message* messa
 
 void TactsuitInterface001::PlayHapticEffect(std::string effectFileName, float locationAngle, float locationHeight, float intensity, bool waitToPlay)
 {
-	_MESSAGE("SKSE mod integrations not working due to debug/release library combinination. Defaulting to SpellWheelOpen");
-
-	return;
-	std::string effectFileName2 = "SpellWheelOpenLeft_1";
-
 	float intensityCalculated = intensity;
-	if(Contains(effectFileName2, "PlayerCatch"))
+	if(Contains(effectFileName, "PlayerCatch"))
 	{
 		intensityCalculated *= TactsuitVR::intensityMultiplierPlayerCatch;
 	}
-	else if (Contains(effectFileName2, "PlayerThrow"))
+	else if (Contains(effectFileName, "PlayerThrow"))
 	{
 		intensityCalculated *= TactsuitVR::intensityMultiplierPlayerThrow;
 	}
-	else if (Contains(effectFileName2, "SpellWheelOpen"))
+	else if (Contains(effectFileName, "SpellWheelOpen"))
 	{
 		intensityCalculated *= TactsuitVR::intensityMultiplierSpellWheelOpen;
 	}
-	else if (Contains(effectFileName2, "Summon"))
+	else if (Contains(effectFileName, "Summon"))
 	{
 		intensityCalculated *= TactsuitVR::intensityMultiplierTeleport;
 	}
-	else if (Contains(effectFileName2, "Travel"))
+	else if (Contains(effectFileName, "Travel"))
 	{
 		intensityCalculated *= TactsuitVR::intensityMultiplierTravelEffect;
 	}
 	
-	TactsuitVR::ProvideHapticFeedbackSpecificFile(locationAngle, locationHeight, effectFileName2, intensityCalculated, waitToPlay);
+	TactsuitVR::ProvideHapticFeedbackSpecificFile(locationAngle, locationHeight, effectFileName, intensityCalculated, waitToPlay);
 }
 
 void TactsuitInterface001::StopHapticEffect(std::string effectFileName)
 {
-	_MESSAGE("PlayHapticEffect received SKSE %s", effectFileName.c_str());
+	_MESSAGE("StopHapticEffect received SKSE %s", effectFileName.c_str());
 	TactsuitVR::PauseHapticFeedBack();
 }
 
