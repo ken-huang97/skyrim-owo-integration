@@ -282,13 +282,15 @@ namespace TactsuitVR
 		{
 
 		}
-		Feedback(FeedbackType _feedbackType, std::string _prefix)
+		Feedback(FeedbackType _feedbackType, std::string _prefix, int _priority = 1)
 		{
 			feedbackType = _feedbackType;
 			prefix = _prefix;
+			priority = _priority;
 		}
 		FeedbackType feedbackType;
 		std::string prefix;
+		int priority;
 		std::vector<std::shared_ptr<OWOGame::BakedSensation>> feedbackSensations = std::vector<std::shared_ptr<OWOGame::BakedSensation>>();
 	};
 

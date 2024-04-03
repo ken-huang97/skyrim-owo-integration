@@ -16,8 +16,6 @@ namespace TactsuitVR {
 
 	float TOLERANCE = 0.00001f;
 
-	unsigned long initialConnectiontimeoutMs = 60 * 1000;
-
 	sharedPtr<OWO> owo;
 	std::clock_t startTime;
 
@@ -36,7 +34,7 @@ namespace TactsuitVR {
 			case ConnectionState::Connected:   return "Connected";
 			case ConnectionState::Disconnected:   return "Disconnected";
 			case ConnectionState::Connecting: return "Connecting";
-			default:      return "[Unknown]";
+			default:      return "Unknown";
 		}
 	}
 
@@ -72,8 +70,13 @@ namespace TactsuitVR {
 
 		while (owoLoopUpdating) {
 			curConnectionState = owo->UpdateStatus(getTimeSinceStart());
+
 			if (prevConnectionState != curConnectionState) {
 				_MESSAGE("OWO connection state changed from %s to %s", ToString(prevConnectionState).c_str(), ToString(curConnectionState).c_str());
+
+				if (curConnectionState == ConnectionState::Connecting && prevConnectionState == ConnectionState::Connected) {
+					owo->AutoConnect();
+				}
 				prevConnectionState = curConnectionState;
 			}
 			WaitFor(owoUpdateWaitMs);
@@ -92,15 +95,14 @@ namespace TactsuitVR {
 		const std::string tactFileStr(sstream.str());
 
 		sharedPtr<BakedSensation> sensation(BakedSensationsParser::Parse(tactFileStr));
-
+		sensation->SetPriority(feedback.priority);
 
 		if (feedbackMap.find(feedback.feedbackType) != feedbackMap.end())
 		{
-			_MESSAGE("Added %s to feedback %s", filename.c_str(), feedbackTypeToString(feedback.feedbackType));
 			feedbackMap[feedback.feedbackType].feedbackSensations.push_back(sensation);
 		}
 		else {
-			_MESSAGE("ERROR: This should not happend: No feedback in map exists for %s", filename.c_str());
+			_MESSAGE("WARN: This should not have happened: No feedback in map exists for %s", filename.c_str());
 		}
 		
 		return sensation;
@@ -118,11 +120,14 @@ namespace TactsuitVR {
 		const std::string tactFileStr(sstream.str());
 
 		sharedPtr<BakedSensation> sensation(BakedSensationsParser::Parse(tactFileStr));
+		sensation->SetPriority(2);
 
 		if (unknownFeedbackMap.find(filename) != unknownFeedbackMap.end()) {
 			_MESSAGE("Duplicate unknown files found for %s. Overwriting", filename.c_str());
 		}
-		unknownFeedbackMap[removeOwoExtension(filename)] = sensation;
+		auto sensName = removeOwoExtension(filename);
+		unknownFeedbackMap[sensName] = sensation;
+		_MESSAGE("Added %s to unknown feedback %s", filename.c_str(), sensName.c_str());
 
 		return sensation;
 	}
@@ -181,45 +186,6 @@ namespace TactsuitVR {
 		return ret;
 	}
 
-	void PauseHapticFeedBack(FeedbackType effect)
-	{
-		_MESSAGE("PauseHapticFeedBack with arg");
-		owo->Stop();
-	}	
-
-	void PauseHapticFeedBack()
-	{
-		_MESSAGE("PauseHapticFeedBack");
-		owo->Stop();
-	}
-
-	void PauseHapticFeedBackSpellCastingRight()
-	{
-		_MESSAGE("PauseHapticFeedBackSpellCastingRight");
-		owo->Stop();
-		// for each(FeedbackType effectType in spellCastingRight)
-		// {
-		// 	for (int i = 1; i <= feedbackMap[effectType].feedbackFileCount; i++)
-		// 	{
-		// 		TurnOffKey((feedbackMap[effectType].prefix + std::to_string(i)).c_str());
-		// 	}
-		// }
-
-	}
-
-	void PauseHapticFeedBackSpellCastingLeft()
-	{
-		_MESSAGE("PauseHapticFeedBackSpellCastingLeft");
-		owo->Stop();
-		// for each(FeedbackType effectType in spellCastingLeft)
-		// {
-		// 	for (int i = 1; i <= feedbackMap[effectType].feedbackFileCount; i++)
-		// 	{
-		// 		TurnOffKey((feedbackMap[effectType].prefix + std::to_string(i)).c_str());
-		// 	}
-		// }
-	}
-
 	bool isPlayingHapticFeedBackAttackRight()
 	{
 		_MESSAGE("isPlayingHapticFeedBackAttackRight");
@@ -252,30 +218,6 @@ namespace TactsuitVR {
 		// 	}
 		// }
 		return false;
-	}
-
-	void ProvideDotFeedback(MusclesGroup muscle, int index, int intensity, int durationMillis)
-	{
-		_MESSAGE("ProvideDotFeedback");
-		if (intensity < TOLERANCE)
-			return;
-
-		if (isGameStoppedNoDialogue())
-		{
-			return;
-		}
-
-		if (!systemInitialized)
-			CreateSystem();
-		std::string key;
-
-		//std::vector<bhaptics::DotPoint> points;
-		//bhaptics::DotPoint point = bhaptics::DotPoint(index, intensity);
-		//points.emplace_back(point);
-		//SubmitDot(key.c_str(), position, points, durationMillis);
-
-		//TODO 
-		//owo->Send(new Sensation())
 	}
 
 	void ProvideHapticFeedback(float locationAngle, float locationHeight, FeedbackType effect, float intensityMultiplier, bool waitToPlay, bool playInMenu)
@@ -314,141 +256,6 @@ namespace TactsuitVR {
 		}
 	}
 
-
-	std::string unbake(const std::string& input) {
-		// Split the string by tilde (~)
-		std::vector<std::string> parts;
-		std::string token;
-		std::istringstream stream(input);
-		while (std::getline(stream, token, '~')) {
-			parts.push_back(token);
-		}
-
-		// Check if there are at least three parts (including the empty string before the first tilde)
-		if (parts.size() >= 4) {
-			// Return the third part (excluding surrounding tildes)
-			return parts[2];
-		}
-		else {
-			return input;
-		}
-	}
-
-	void ProvideHapticFeedbackThread(float locationAngle, float locationHeight, FeedbackType effect, float intensityMultiplier, bool waitToPlay, bool playInMenu)
-	{
-		_MESSAGE("ProvideHapticFeedbackThread %s %f %f", feedbackTypeToString(effect).c_str(), locationAngle, locationHeight);
-		if (intensityMultiplier < TOLERANCE)
-			return;
-
-		if (isGameStoppedNoDialogue() && !playInMenu)
-		{
-			return;
-		}
-
-		if (!systemInitialized)
-			CreateSystem();
-
-		if (feedbackMap.find(effect) != feedbackMap.end())
-		{
-			if (feedbackMap[effect].feedbackSensations.size() > 0)
-			{
-				if (waitToPlay)
-				{
-					if (IsPlayingKeyAll(effect))
-					{
-						return;
-					}
-				}
-
-				if (locationHeight < -0.45f)
-					locationHeight = -0.45f;
-				else if (locationHeight > 0.45f)
-					locationHeight = 0.45f;
-
-				//TODO only need to store the ID and whether it needs muscle?
-				std::vector<std::shared_ptr<BakedSensation>> & feedbackSensations = feedbackMap[effect].feedbackSensations;
-				std::shared_ptr<BakedSensation> sensation(feedbackSensations[(randi(0, feedbackSensations.size()-1))]);
-
-				auto sensationWithId = SensationsParser::Parse(std::to_string(sensation->id));
-
-				if (SensationWithMusclesParser::CanParse(sensation->Stringify())) {
-					std::vector<Muscle> muscles = { angleToMuscle(locationAngle, locationHeight) };
-					owo->Send(sensationWithId->WithMuscles(muscles));
-				}
-				else {
-					owo->Send(sensationWithId);
-				}
-			}
-			else
-			{
-				_MESSAGE("No file found for %s", feedbackMap[effect].prefix.c_str());
-			}
-		}
-	}
-
-	std::string remove_after_underscore(const std::string& str) {
-		// Find the position of the first underscore
-		size_t underscore_pos = str.find('_');
-
-		// If there's no underscore, return the original string
-		if (underscore_pos == std::string::npos) {
-			return str;
-		}
-
-		// Return a substring from the beginning of the string to the position before the underscore
-		return str.substr(0, underscore_pos);
-	}
-
-	void ProvideHapticFeedbackSpecificFile(float locationAngle, float locationHeight, std::string feedbackFileName, float intensityMultiplier, bool waitToPlay)
-	{
-		auto feedbackType = stringToFeedbackType(remove_after_underscore(feedbackFileName));
-
-		if (feedbackType != FeedbackType::Default) {
-			return ProvideHapticFeedback(locationAngle, locationHeight, feedbackType, intensityMultiplier, waitToPlay);
-		} else {
-			return ProvideHapticFeedbackThreadSpecificFile(locationAngle, locationHeight, feedbackFileName, intensityMultiplier, waitToPlay);
-		}
-	}
-
-	void ProvideHapticFeedbackThreadSpecificFile(float locationAngle, float locationHeight, std::string feedbackFileName, float intensityMultiplier, bool waitToPlay)
-	{
-		if (intensityMultiplier < TOLERANCE)
-			return;
-
-		if (isGameStoppedNoDialogue())
-		{
-			return;
-		}
-
-		if (!systemInitialized)
-			CreateSystem();
-
-		//if (waitToPlay)
-		//{
-		//	if (IsPlayingKey(feedbackFileName.c_str()))
-		//		return;
-		//}
-
-		if (locationHeight < -0.5f)
-			locationHeight = -0.5f;
-		else if (locationHeight > 0.5f)
-			locationHeight = 0.5f;
-
-		auto sensation = unknownFeedbackMap[feedbackFileName];
-		// _MESSAGE("Sending id %d", sensation->id);
-		auto sensationWithId = SensationsParser::Parse(std::to_string(sensation->id));
-
-		if (SensationWithMusclesParser::CanParse(sensation->Stringify())) {
-			std::vector<Muscle> muscles = { angleToMuscle(locationAngle, locationHeight) };
-			owo->Send(sensationWithId->WithMuscles(muscles));
-		}
-		else {
-			owo->Send(sensationWithId);
-		}
-
-		//LOG("ProvideHapticFeedback submit successful");
-	}
-
 	// Thank you florianfahrenberger for this function
 	Muscle angleToMuscle(float locationAngle, float locationHeight) {
 		Muscle myMuscle = Muscle::Pectoral_R();
@@ -479,6 +286,117 @@ namespace TactsuitVR {
 		return myMuscle;
 	}
 
+
+	std::string unbake(const std::string& input) {
+		std::vector<std::string> parts;
+		std::string token;
+		std::istringstream stream(input);
+		while (std::getline(stream, token, '~')) {
+			parts.push_back(token);
+		}
+
+		return (parts.size() >= 4) ? parts[2] : input;
+	}
+
+
+	void sendSensation(float locationAngle, float locationHeight, sharedPtr<BakedSensation> sensation) {
+		if (owo->State() != ConnectionState::Connected) {
+			_MESSAGE("WARN: Not connected. Skipping.");
+			return;
+		}
+
+		// auto sensationWithId = SensationsParser::Parse(std::to_string(sensation->id));
+		auto sensationWithId = SensationsParser::Parse(unbake(sensation->Stringify()));
+		sensationWithId->SetPriority(sensation->GetPriority());
+
+		if (locationHeight < -0.5f)
+			locationHeight = -0.5f;
+		else if (locationHeight > 0.5f)
+			locationHeight = 0.5f;
+
+		_MESSAGE("Sending %s with priority %d", sensation->name.c_str(), sensation->GetPriority());
+		if (SensationWithMusclesParser::CanParse(sensation->Stringify())) {
+			owo->Send(sensationWithId);
+		}
+		else {
+			std::vector<Muscle> muscles = { angleToMuscle(locationAngle, locationHeight) };
+			_MESSAGE("Sending with muscles from angle %d height %d", locationAngle, locationHeight);
+			owo->Send(sensationWithId->WithMuscles(muscles));
+		}
+	}
+
+	void ProvideHapticFeedbackThread(float locationAngle, float locationHeight, FeedbackType effect, float intensityMultiplier, bool waitToPlay, bool playInMenu)
+	{
+		_MESSAGE("ProvideHapticFeedbackThread %s %f %f", feedbackTypeToString(effect).c_str(), locationAngle, locationHeight);
+		if (intensityMultiplier < TOLERANCE)
+			return;
+
+		if (isGameStoppedNoDialogue() && !playInMenu)
+		{
+			return;
+		}
+
+		if (!systemInitialized)
+			CreateSystem();
+
+		if (feedbackMap.find(effect) != feedbackMap.end())
+		{
+			if (feedbackMap[effect].feedbackSensations.size() > 0)
+			{
+				if (waitToPlay)
+				{
+					if (IsPlayingKeyAll(effect))
+					{
+						return;
+					}
+				}
+
+				//TODO only need to store the ID and whether it needs muscle?
+				std::vector<std::shared_ptr<BakedSensation>> & feedbackSensations = feedbackMap[effect].feedbackSensations;
+				std::shared_ptr<BakedSensation> sensation(feedbackSensations[(randi(0, feedbackSensations.size()-1))]);
+
+				sendSensation(locationAngle, locationHeight, sensation);
+			}
+			else
+			{
+				_MESSAGE("Warn: No file found for %s", feedbackMap[effect].prefix.c_str());
+			}
+		}
+		else {
+			_MESSAGE("Warn: feedback not in map %s", feedbackMap[effect].prefix.c_str());
+		}
+	}
+
+	std::string remove_after_underscore(const std::string& str) {
+		size_t underscore_pos = str.find('_');
+		return (underscore_pos == std::string::npos) ? str : str.substr(0, underscore_pos);
+	}
+
+	void ProvideHapticFeedbackSpecificFile(float locationAngle, float locationHeight, std::string feedbackFileName, float intensityMultiplier, bool waitToPlay)
+	{
+		auto feedbackType = stringToFeedbackType(remove_after_underscore(feedbackFileName));
+
+		if (feedbackType != FeedbackType::Default) {
+			return ProvideHapticFeedback(locationAngle, locationHeight, feedbackType, intensityMultiplier, waitToPlay);
+		} else {
+			return ProvideHapticFeedbackThreadSpecificFile(locationAngle, locationHeight, feedbackFileName, intensityMultiplier, waitToPlay);
+		}
+	}
+
+	void ProvideHapticFeedbackThreadSpecificFile(float locationAngle, float locationHeight, std::string feedbackFileName, float intensityMultiplier, bool waitToPlay)
+	{
+		_MESSAGE("ProvideHapticFeedbackThreadSpecificFile %s %f %f", feedbackFileName.c_str(), locationAngle, locationHeight);
+		if (intensityMultiplier < TOLERANCE || isGameStoppedNoDialogue()) return;
+		if (!systemInitialized) CreateSystem();
+
+		//if (waitToPlay)
+		//{
+		//	if (IsPlayingKey(feedbackFileName.c_str()))
+		//		return;
+		//}
+
+		sendSensation(locationAngle, locationHeight, unknownFeedbackMap[feedbackFileName]);
+	}
 
 	static const std::unordered_map<FeedbackType, std::string> feedbackStringMap = {
 		 {FeedbackType::NoFeedback, "NoFeedback"},
@@ -700,14 +618,8 @@ namespace TactsuitVR {
 	};
 
 	std::string feedbackTypeToString(FeedbackType feedbackType) {
-		// Find the corresponding string in the map
 		auto it = feedbackStringMap.find(feedbackType);
-		if (it != feedbackStringMap.end()) {
-			return it->second;
-		}
-		else {
-			return "Unknown";
-		}
+		return (it != feedbackStringMap.end()) ? it->second : "Unknown";
 	}
 
 	static std::unordered_map<std::string, FeedbackType> stringToFeedbackMap = {};
@@ -721,9 +633,7 @@ namespace TactsuitVR {
 	}
 
 	FeedbackType stringToFeedbackType(std::string str) {
-		if (stringToFeedbackMap.size() == 0) {
-			stringToFeedbackMap = generateStringToFeedbackTypeMap(feedbackStringMap);
-		}
+		if (stringToFeedbackMap.size() == 0) stringToFeedbackMap = generateStringToFeedbackTypeMap(feedbackStringMap);
 
 		// Find the corresponding string in the map
 		auto it = stringToFeedbackMap.find(str);
@@ -739,96 +649,96 @@ namespace TactsuitVR {
 	void FillFeedbackList()
 	{
 		feedbackMap.clear();
-		feedbackMap[FeedbackType::MeleeSwordRight] = Feedback(FeedbackType::MeleeSwordRight, "MeleeSwordRight_"); //1
-		feedbackMap[FeedbackType::MeleeAxeRight] = Feedback(FeedbackType::MeleeAxeRight, "MeleeAxeRight_"); //1
-		feedbackMap[FeedbackType::MeleeMaceRight] = Feedback(FeedbackType::MeleeMaceRight, "MeleeMaceRight_"); //1
-		feedbackMap[FeedbackType::MeleeDaggerRight] = Feedback(FeedbackType::MeleeDaggerRight, "MeleeDaggerRight_"); //1
-		feedbackMap[FeedbackType::Melee2HAxeRight] = Feedback(FeedbackType::Melee2HAxeRight, "Melee2HAxeRight_"); //1
-		feedbackMap[FeedbackType::Melee2HSwordRight] = Feedback(FeedbackType::Melee2HSwordRight, "Melee2HSwordRight_"); //1
-		feedbackMap[FeedbackType::MeleeSwordLeft] = Feedback(FeedbackType::MeleeSwordLeft, "MeleeSwordLeft_"); //1
-		feedbackMap[FeedbackType::MeleeAxeLeft] = Feedback(FeedbackType::MeleeAxeLeft, "MeleeAxeLeft_"); //1
-		feedbackMap[FeedbackType::MeleeMaceLeft] = Feedback(FeedbackType::MeleeMaceLeft, "MeleeMaceLeft_"); //1
-		feedbackMap[FeedbackType::MeleeDaggerLeft] = Feedback(FeedbackType::MeleeDaggerLeft, "MeleeDaggerLeft_"); //1
-		feedbackMap[FeedbackType::Melee2HAxeLeft] = Feedback(FeedbackType::Melee2HAxeLeft, "Melee2HAxeLeft_"); //1
-		feedbackMap[FeedbackType::Melee2HSwordLeft] = Feedback(FeedbackType::Melee2HSwordLeft, "Melee2HSwordLeft_"); //1
-		feedbackMap[FeedbackType::MeleeFist] = Feedback(FeedbackType::MeleeFist, "MeleeFist_"); //1
-		feedbackMap[FeedbackType::MeleeBash] = Feedback(FeedbackType::MeleeBash, "MeleeBash_"); //1
-		feedbackMap[FeedbackType::MeleePowerAttack] = Feedback(FeedbackType::MeleePowerAttack, "MeleePowerAttack_"); //1
-		feedbackMap[FeedbackType::Ranged] = Feedback(FeedbackType::Ranged, "Ranged_"); //1
-		feedbackMap[FeedbackType::MagicFire] = Feedback(FeedbackType::MagicFire, "MagicFire_"); //1
-		feedbackMap[FeedbackType::MagicShock] = Feedback(FeedbackType::MagicShock, "MagicShock_"); //1
-		feedbackMap[FeedbackType::MagicIce] = Feedback(FeedbackType::MagicIce, "MagicIce_"); //1
-		feedbackMap[FeedbackType::MagicAlteration] = Feedback(FeedbackType::MagicAlteration, "MagicAlteration_"); //1
-		feedbackMap[FeedbackType::MagicIllusion] = Feedback(FeedbackType::MagicIllusion, "MagicIllusion_"); //1
-		feedbackMap[FeedbackType::MagicRestoration] = Feedback(FeedbackType::MagicRestoration, "MagicRestoration_"); //1
-		feedbackMap[FeedbackType::MagicPoison] = Feedback(FeedbackType::MagicPoison, "MagicPoison_"); //1
-		feedbackMap[FeedbackType::MagicOther] = Feedback(FeedbackType::MagicOther, "MagicOther_"); //1
-		feedbackMap[FeedbackType::MagicContinuousFire] = Feedback(FeedbackType::MagicContinuousFire, "MagicContinuousFire_"); //1
-		feedbackMap[FeedbackType::MagicContinuousShock] = Feedback(FeedbackType::MagicContinuousShock, "MagicContinuousShock_"); //1
-		feedbackMap[FeedbackType::MagicContinuousIce] = Feedback(FeedbackType::MagicContinuousIce, "MagicContinuousIce_"); //1
-		feedbackMap[FeedbackType::MagicContinuousAlteration] = Feedback(FeedbackType::MagicContinuousAlteration, "MagicContinuousAlteration_"); //1
-		feedbackMap[FeedbackType::MagicContinuousIllusion] = Feedback(FeedbackType::MagicContinuousIllusion, "MagicContinuousIllusion_"); //1
-		feedbackMap[FeedbackType::MagicContinuousRestoration] = Feedback(FeedbackType::MagicContinuousRestoration, "MagicContinuousRestoration_"); //1
-		feedbackMap[FeedbackType::MagicContinuousOther] = Feedback(FeedbackType::MagicContinuousOther, "MagicContinuousOther_"); //1
-		feedbackMap[FeedbackType::MagicContinuousPoison] = Feedback(FeedbackType::MagicContinuousPoison, "MagicContinuousPoison_"); //1
-		feedbackMap[FeedbackType::Shout] = Feedback(FeedbackType::Shout, "Shout_"); //1
-		feedbackMap[FeedbackType::HeartBeat] = Feedback(FeedbackType::HeartBeat, "HeartBeat_"); //1
-		feedbackMap[FeedbackType::HeartBeatFast] = Feedback(FeedbackType::HeartBeatFast, "HeartBeatFast_"); //1
-		feedbackMap[FeedbackType::GreybeardPowerAbsorb] = Feedback(FeedbackType::GreybeardPowerAbsorb, "GreybeardPowerAbsorb_"); //1
-		feedbackMap[FeedbackType::DragonSoul] = Feedback(FeedbackType::DragonSoul, "DragonSoul_"); //1
-		feedbackMap[FeedbackType::WordWall] = Feedback(FeedbackType::WordWall, "WordWall_"); //1
-		feedbackMap[FeedbackType::PlayerSpellFireLeft] = Feedback(FeedbackType::PlayerSpellFireLeft, "PlayerSpellFireLeft_"); //1
-		feedbackMap[FeedbackType::PlayerSpellIceLeft] = Feedback(FeedbackType::PlayerSpellIceLeft, "PlayerSpellIceLeft_"); //1
-		feedbackMap[FeedbackType::PlayerSpellShockLeft] = Feedback(FeedbackType::PlayerSpellShockLeft, "PlayerSpellShockLeft_"); //1
-		feedbackMap[FeedbackType::PlayerSpellAlterationLeft] = Feedback(FeedbackType::PlayerSpellAlterationLeft, "PlayerSpellAlterationLeft_"); //1
-		feedbackMap[FeedbackType::PlayerSpellIllusionLeft] = Feedback(FeedbackType::PlayerSpellIllusionLeft, "PlayerSpellIllusionLeft_"); //1
-		feedbackMap[FeedbackType::PlayerSpellLightLeft] = Feedback(FeedbackType::PlayerSpellLightLeft, "PlayerSpellLightLeft_"); //1
-		feedbackMap[FeedbackType::PlayerSpellRestorationLeft] = Feedback(FeedbackType::PlayerSpellRestorationLeft, "PlayerSpellRestorationLeft_"); //1
-		feedbackMap[FeedbackType::PlayerSpellWardLeft] = Feedback(FeedbackType::PlayerSpellWardLeft, "PlayerSpellWardLeft_"); //1
-		feedbackMap[FeedbackType::PlayerSpellConjurationLeft] = Feedback(FeedbackType::PlayerSpellConjurationLeft, "PlayerSpellConjurationLeft_"); //1
-		feedbackMap[FeedbackType::PlayerSpellOtherLeft] = Feedback(FeedbackType::PlayerSpellOtherLeft, "PlayerSpellOtherLeft_"); //1
-		feedbackMap[FeedbackType::PlayerSpellFireRight] = Feedback(FeedbackType::PlayerSpellFireRight, "PlayerSpellFireRight_"); //1
-		feedbackMap[FeedbackType::PlayerSpellIceRight] = Feedback(FeedbackType::PlayerSpellIceRight, "PlayerSpellIceRight_"); //1
-		feedbackMap[FeedbackType::PlayerSpellShockRight] = Feedback(FeedbackType::PlayerSpellShockRight, "PlayerSpellShockRight_"); //1
-		feedbackMap[FeedbackType::PlayerSpellAlterationRight] = Feedback(FeedbackType::PlayerSpellAlterationRight, "PlayerSpellAlterationRight_"); //1
-		feedbackMap[FeedbackType::PlayerSpellIllusionRight] = Feedback(FeedbackType::PlayerSpellIllusionRight, "PlayerSpellIllusionRight_"); //1
-		feedbackMap[FeedbackType::PlayerSpellLightRight] = Feedback(FeedbackType::PlayerSpellLightRight, "PlayerSpellLightRight_"); //1
-		feedbackMap[FeedbackType::PlayerSpellRestorationRight] = Feedback(FeedbackType::PlayerSpellRestorationRight, "PlayerSpellRestorationRight_"); //1
-		feedbackMap[FeedbackType::PlayerSpellWardRight] = Feedback(FeedbackType::PlayerSpellWardRight, "PlayerSpellWardRight_"); //1
-		feedbackMap[FeedbackType::PlayerSpellConjurationRight] = Feedback(FeedbackType::PlayerSpellConjurationRight, "PlayerSpellConjurationRight_"); //1
-		feedbackMap[FeedbackType::PlayerSpellOtherRight] = Feedback(FeedbackType::PlayerSpellOtherRight, "PlayerSpellOtherRight_"); //1
-		feedbackMap[FeedbackType::PlayerPowerAttackLeft] = Feedback(FeedbackType::PlayerPowerAttackLeft, "PlayerPowerAttackLeft_"); //1
-		feedbackMap[FeedbackType::PlayerBashLeft] = Feedback(FeedbackType::PlayerBashLeft, "PlayerBashLeft_"); //1
-		feedbackMap[FeedbackType::PlayerAttackLeft] = Feedback(FeedbackType::PlayerAttackLeft, "PlayerAttackLeft_"); //1
-		feedbackMap[FeedbackType::PlayerPowerAttackRight] = Feedback(FeedbackType::PlayerPowerAttackRight, "PlayerPowerAttackRight_"); //1
-		feedbackMap[FeedbackType::PlayerBashRight] = Feedback(FeedbackType::PlayerBashRight, "PlayerBashRight_"); //1
-		feedbackMap[FeedbackType::PlayerAttackRight] = Feedback(FeedbackType::PlayerAttackRight, "PlayerAttackRight_"); //1
-		feedbackMap[FeedbackType::PlayerBlockLeft] = Feedback(FeedbackType::PlayerBlockLeft, "PlayerBlockLeft_"); //1
-		feedbackMap[FeedbackType::PlayerBlockRight] = Feedback(FeedbackType::PlayerBlockRight, "PlayerBlockRight_"); //1
-		feedbackMap[FeedbackType::PlayerBowPullLeft] = Feedback(FeedbackType::PlayerBowPullLeft, "PlayerBowPullLeft_"); //1
-		feedbackMap[FeedbackType::PlayerBowPullRight] = Feedback(FeedbackType::PlayerBowPullRight, "PlayerBowPullRight_"); //1
-		feedbackMap[FeedbackType::PlayerBowHoldLeft] = Feedback(FeedbackType::PlayerBowHoldLeft, "PlayerBowHoldLeft_"); //1
-		feedbackMap[FeedbackType::PlayerBowHoldRight] = Feedback(FeedbackType::PlayerBowHoldRight, "PlayerBowHoldRight_"); //1
-		feedbackMap[FeedbackType::PlayerShout] = Feedback(FeedbackType::PlayerShout, "PlayerShout_"); //1
-		feedbackMap[FeedbackType::Bite] = Feedback(FeedbackType::Bite, "Bite_"); //1
-		feedbackMap[FeedbackType::HipHolsterStoreLeft] = Feedback(FeedbackType::HipHolsterStoreLeft, "HipHolsterStoreLeft_"); //1
-		feedbackMap[FeedbackType::HipHolsterStoreRight] = Feedback(FeedbackType::HipHolsterStoreRight, "HipHolsterStoreRight_"); //1
-		feedbackMap[FeedbackType::HipHolsterRemoveLeft] = Feedback(FeedbackType::HipHolsterRemoveLeft, "HipHolsterRemoveLeft_"); //1
-		feedbackMap[FeedbackType::HipHolsterRemoveRight] = Feedback(FeedbackType::HipHolsterRemoveRight, "HipHolsterRemoveRight_"); //1
-		feedbackMap[FeedbackType::SleeveHolsterStoreLeft] = Feedback(FeedbackType::SleeveHolsterStoreLeft, "SleeveHolsterStoreLeft_"); //1
-		feedbackMap[FeedbackType::SleeveHolsterStoreRight] = Feedback(FeedbackType::SleeveHolsterStoreRight, "SleeveHolsterStoreRight_"); //1
-		feedbackMap[FeedbackType::SleeveHolsterRemoveLeft] = Feedback(FeedbackType::SleeveHolsterRemoveLeft, "SleeveHolsterRemoveLeft_"); //1
-		feedbackMap[FeedbackType::SleeveHolsterRemoveRight] = Feedback(FeedbackType::SleeveHolsterRemoveRight, "SleeveHolsterRemoveRight_"); //1
-		feedbackMap[FeedbackType::BackpackStoreLeft] = Feedback(FeedbackType::BackpackStoreLeft, "BackpackStoreLeft_"); //1
-		feedbackMap[FeedbackType::BackpackStoreRight] = Feedback(FeedbackType::BackpackStoreRight, "BackpackStoreRight_"); //1
-		feedbackMap[FeedbackType::BackpackRemoveLeft] = Feedback(FeedbackType::BackpackRemoveLeft, "BackpackRemoveLeft_"); //1
-		feedbackMap[FeedbackType::BackpackRemoveRight] = Feedback(FeedbackType::BackpackRemoveRight, "BackpackRemoveRight_"); //1
-		feedbackMap[FeedbackType::StomachStore] = Feedback(FeedbackType::StomachStore, "StomachStore_"); //1
-		feedbackMap[FeedbackType::StomachRemove] = Feedback(FeedbackType::StomachRemove, "StomachRemove_"); //1
-		feedbackMap[FeedbackType::ChestStore] = Feedback(FeedbackType::ChestStore, "ChestStore_"); //1
-		feedbackMap[FeedbackType::ChestRemove] = Feedback(FeedbackType::ChestRemove, "ChestRemove_"); //1
-		feedbackMap[FeedbackType::ConsumableDrink] = Feedback(FeedbackType::ConsumableDrink, "ConsumableDrink_"); //1
-		feedbackMap[FeedbackType::ConsumableFood] = Feedback(FeedbackType::ConsumableFood, "ConsumableFood_"); //1
+		feedbackMap[FeedbackType::MeleeSwordRight] = Feedback(FeedbackType::MeleeSwordRight, "MeleeSwordRight_");
+		feedbackMap[FeedbackType::MeleeAxeRight] = Feedback(FeedbackType::MeleeAxeRight, "MeleeAxeRight_");
+		feedbackMap[FeedbackType::MeleeMaceRight] = Feedback(FeedbackType::MeleeMaceRight, "MeleeMaceRight_");
+		feedbackMap[FeedbackType::MeleeDaggerRight] = Feedback(FeedbackType::MeleeDaggerRight, "MeleeDaggerRight_");
+		feedbackMap[FeedbackType::Melee2HAxeRight] = Feedback(FeedbackType::Melee2HAxeRight, "Melee2HAxeRight_");
+		feedbackMap[FeedbackType::Melee2HSwordRight] = Feedback(FeedbackType::Melee2HSwordRight, "Melee2HSwordRight_");
+		feedbackMap[FeedbackType::MeleeSwordLeft] = Feedback(FeedbackType::MeleeSwordLeft, "MeleeSwordLeft_");
+		feedbackMap[FeedbackType::MeleeAxeLeft] = Feedback(FeedbackType::MeleeAxeLeft, "MeleeAxeLeft_");
+		feedbackMap[FeedbackType::MeleeMaceLeft] = Feedback(FeedbackType::MeleeMaceLeft, "MeleeMaceLeft_");
+		feedbackMap[FeedbackType::MeleeDaggerLeft] = Feedback(FeedbackType::MeleeDaggerLeft, "MeleeDaggerLeft_");
+		feedbackMap[FeedbackType::Melee2HAxeLeft] = Feedback(FeedbackType::Melee2HAxeLeft, "Melee2HAxeLeft_");
+		feedbackMap[FeedbackType::Melee2HSwordLeft] = Feedback(FeedbackType::Melee2HSwordLeft, "Melee2HSwordLeft_");
+		feedbackMap[FeedbackType::MeleeFist] = Feedback(FeedbackType::MeleeFist, "MeleeFist_");
+		feedbackMap[FeedbackType::MeleeBash] = Feedback(FeedbackType::MeleeBash, "MeleeBash_");
+		feedbackMap[FeedbackType::MeleePowerAttack] = Feedback(FeedbackType::MeleePowerAttack, "MeleePowerAttack_");
+		feedbackMap[FeedbackType::Ranged] = Feedback(FeedbackType::Ranged, "Ranged_");
+		feedbackMap[FeedbackType::MagicFire] = Feedback(FeedbackType::MagicFire, "MagicFire_", 10);
+		feedbackMap[FeedbackType::MagicShock] = Feedback(FeedbackType::MagicShock, "MagicShock_", 10);
+		feedbackMap[FeedbackType::MagicIce] = Feedback(FeedbackType::MagicIce, "MagicIce_", 10);
+		feedbackMap[FeedbackType::MagicAlteration] = Feedback(FeedbackType::MagicAlteration, "MagicAlteration_", 10);
+		feedbackMap[FeedbackType::MagicIllusion] = Feedback(FeedbackType::MagicIllusion, "MagicIllusion_", 10);
+		feedbackMap[FeedbackType::MagicRestoration] = Feedback(FeedbackType::MagicRestoration, "MagicRestoration_", 10);
+		feedbackMap[FeedbackType::MagicPoison] = Feedback(FeedbackType::MagicPoison, "MagicPoison_", 10);
+		feedbackMap[FeedbackType::MagicOther] = Feedback(FeedbackType::MagicOther, "MagicOther_", 10);
+		feedbackMap[FeedbackType::MagicContinuousFire] = Feedback(FeedbackType::MagicContinuousFire, "MagicContinuousFire_", 10);
+		feedbackMap[FeedbackType::MagicContinuousShock] = Feedback(FeedbackType::MagicContinuousShock, "MagicContinuousShock_", 10);
+		feedbackMap[FeedbackType::MagicContinuousIce] = Feedback(FeedbackType::MagicContinuousIce, "MagicContinuousIce_", 10);
+		feedbackMap[FeedbackType::MagicContinuousAlteration] = Feedback(FeedbackType::MagicContinuousAlteration, "MagicContinuousAlteration_", 10);
+		feedbackMap[FeedbackType::MagicContinuousIllusion] = Feedback(FeedbackType::MagicContinuousIllusion, "MagicContinuousIllusion_", 10);
+		feedbackMap[FeedbackType::MagicContinuousRestoration] = Feedback(FeedbackType::MagicContinuousRestoration, "MagicContinuousRestoration_", 10);
+		feedbackMap[FeedbackType::MagicContinuousOther] = Feedback(FeedbackType::MagicContinuousOther, "MagicContinuousOther_", 10);
+		feedbackMap[FeedbackType::MagicContinuousPoison] = Feedback(FeedbackType::MagicContinuousPoison, "MagicContinuousPoison_", 10);
+		feedbackMap[FeedbackType::Shout] = Feedback(FeedbackType::Shout, "Shout_", 100);
+		feedbackMap[FeedbackType::HeartBeat] = Feedback(FeedbackType::HeartBeat, "HeartBeat_");
+		feedbackMap[FeedbackType::HeartBeatFast] = Feedback(FeedbackType::HeartBeatFast, "HeartBeatFast_");
+		feedbackMap[FeedbackType::GreybeardPowerAbsorb] = Feedback(FeedbackType::GreybeardPowerAbsorb, "GreybeardPowerAbsorb_", 100);
+		feedbackMap[FeedbackType::DragonSoul] = Feedback(FeedbackType::DragonSoul, "DragonSoul_", 100);
+		feedbackMap[FeedbackType::WordWall] = Feedback(FeedbackType::WordWall, "WordWall_", 100);
+		feedbackMap[FeedbackType::PlayerSpellFireLeft] = Feedback(FeedbackType::PlayerSpellFireLeft, "PlayerSpellFireLeft_");
+		feedbackMap[FeedbackType::PlayerSpellIceLeft] = Feedback(FeedbackType::PlayerSpellIceLeft, "PlayerSpellIceLeft_");
+		feedbackMap[FeedbackType::PlayerSpellShockLeft] = Feedback(FeedbackType::PlayerSpellShockLeft, "PlayerSpellShockLeft_");
+		feedbackMap[FeedbackType::PlayerSpellAlterationLeft] = Feedback(FeedbackType::PlayerSpellAlterationLeft, "PlayerSpellAlterationLeft_");
+		feedbackMap[FeedbackType::PlayerSpellIllusionLeft] = Feedback(FeedbackType::PlayerSpellIllusionLeft, "PlayerSpellIllusionLeft_");
+		feedbackMap[FeedbackType::PlayerSpellLightLeft] = Feedback(FeedbackType::PlayerSpellLightLeft, "PlayerSpellLightLeft_");
+		feedbackMap[FeedbackType::PlayerSpellRestorationLeft] = Feedback(FeedbackType::PlayerSpellRestorationLeft, "PlayerSpellRestorationLeft_");
+		feedbackMap[FeedbackType::PlayerSpellWardLeft] = Feedback(FeedbackType::PlayerSpellWardLeft, "PlayerSpellWardLeft_");
+		feedbackMap[FeedbackType::PlayerSpellConjurationLeft] = Feedback(FeedbackType::PlayerSpellConjurationLeft, "PlayerSpellConjurationLeft_");
+		feedbackMap[FeedbackType::PlayerSpellOtherLeft] = Feedback(FeedbackType::PlayerSpellOtherLeft, "PlayerSpellOtherLeft_");
+		feedbackMap[FeedbackType::PlayerSpellFireRight] = Feedback(FeedbackType::PlayerSpellFireRight, "PlayerSpellFireRight_");
+		feedbackMap[FeedbackType::PlayerSpellIceRight] = Feedback(FeedbackType::PlayerSpellIceRight, "PlayerSpellIceRight_");
+		feedbackMap[FeedbackType::PlayerSpellShockRight] = Feedback(FeedbackType::PlayerSpellShockRight, "PlayerSpellShockRight_");
+		feedbackMap[FeedbackType::PlayerSpellAlterationRight] = Feedback(FeedbackType::PlayerSpellAlterationRight, "PlayerSpellAlterationRight_");
+		feedbackMap[FeedbackType::PlayerSpellIllusionRight] = Feedback(FeedbackType::PlayerSpellIllusionRight, "PlayerSpellIllusionRight_");
+		feedbackMap[FeedbackType::PlayerSpellLightRight] = Feedback(FeedbackType::PlayerSpellLightRight, "PlayerSpellLightRight_");
+		feedbackMap[FeedbackType::PlayerSpellRestorationRight] = Feedback(FeedbackType::PlayerSpellRestorationRight, "PlayerSpellRestorationRight_");
+		feedbackMap[FeedbackType::PlayerSpellWardRight] = Feedback(FeedbackType::PlayerSpellWardRight, "PlayerSpellWardRight_");
+		feedbackMap[FeedbackType::PlayerSpellConjurationRight] = Feedback(FeedbackType::PlayerSpellConjurationRight, "PlayerSpellConjurationRight_");
+		feedbackMap[FeedbackType::PlayerSpellOtherRight] = Feedback(FeedbackType::PlayerSpellOtherRight, "PlayerSpellOtherRight_");
+		feedbackMap[FeedbackType::PlayerPowerAttackLeft] = Feedback(FeedbackType::PlayerPowerAttackLeft, "PlayerPowerAttackLeft_");
+		feedbackMap[FeedbackType::PlayerBashLeft] = Feedback(FeedbackType::PlayerBashLeft, "PlayerBashLeft_");
+		feedbackMap[FeedbackType::PlayerAttackLeft] = Feedback(FeedbackType::PlayerAttackLeft, "PlayerAttackLeft_");
+		feedbackMap[FeedbackType::PlayerPowerAttackRight] = Feedback(FeedbackType::PlayerPowerAttackRight, "PlayerPowerAttackRight_");
+		feedbackMap[FeedbackType::PlayerBashRight] = Feedback(FeedbackType::PlayerBashRight, "PlayerBashRight_");
+		feedbackMap[FeedbackType::PlayerAttackRight] = Feedback(FeedbackType::PlayerAttackRight, "PlayerAttackRight_");
+		feedbackMap[FeedbackType::PlayerBlockLeft] = Feedback(FeedbackType::PlayerBlockLeft, "PlayerBlockLeft_");
+		feedbackMap[FeedbackType::PlayerBlockRight] = Feedback(FeedbackType::PlayerBlockRight, "PlayerBlockRight_");
+		feedbackMap[FeedbackType::PlayerBowPullLeft] = Feedback(FeedbackType::PlayerBowPullLeft, "PlayerBowPullLeft_");
+		feedbackMap[FeedbackType::PlayerBowPullRight] = Feedback(FeedbackType::PlayerBowPullRight, "PlayerBowPullRight_");
+		feedbackMap[FeedbackType::PlayerBowHoldLeft] = Feedback(FeedbackType::PlayerBowHoldLeft, "PlayerBowHoldLeft_");
+		feedbackMap[FeedbackType::PlayerBowHoldRight] = Feedback(FeedbackType::PlayerBowHoldRight, "PlayerBowHoldRight_");
+		feedbackMap[FeedbackType::PlayerShout] = Feedback(FeedbackType::PlayerShout, "PlayerShout_");
+		feedbackMap[FeedbackType::Bite] = Feedback(FeedbackType::Bite, "Bite_");
+		feedbackMap[FeedbackType::HipHolsterStoreLeft] = Feedback(FeedbackType::HipHolsterStoreLeft, "HipHolsterStoreLeft_");
+		feedbackMap[FeedbackType::HipHolsterStoreRight] = Feedback(FeedbackType::HipHolsterStoreRight, "HipHolsterStoreRight_");
+		feedbackMap[FeedbackType::HipHolsterRemoveLeft] = Feedback(FeedbackType::HipHolsterRemoveLeft, "HipHolsterRemoveLeft_");
+		feedbackMap[FeedbackType::HipHolsterRemoveRight] = Feedback(FeedbackType::HipHolsterRemoveRight, "HipHolsterRemoveRight_");
+		feedbackMap[FeedbackType::SleeveHolsterStoreLeft] = Feedback(FeedbackType::SleeveHolsterStoreLeft, "SleeveHolsterStoreLeft_");
+		feedbackMap[FeedbackType::SleeveHolsterStoreRight] = Feedback(FeedbackType::SleeveHolsterStoreRight, "SleeveHolsterStoreRight_");
+		feedbackMap[FeedbackType::SleeveHolsterRemoveLeft] = Feedback(FeedbackType::SleeveHolsterRemoveLeft, "SleeveHolsterRemoveLeft_");
+		feedbackMap[FeedbackType::SleeveHolsterRemoveRight] = Feedback(FeedbackType::SleeveHolsterRemoveRight, "SleeveHolsterRemoveRight_");
+		feedbackMap[FeedbackType::BackpackStoreLeft] = Feedback(FeedbackType::BackpackStoreLeft, "BackpackStoreLeft_");
+		feedbackMap[FeedbackType::BackpackStoreRight] = Feedback(FeedbackType::BackpackStoreRight, "BackpackStoreRight_");
+		feedbackMap[FeedbackType::BackpackRemoveLeft] = Feedback(FeedbackType::BackpackRemoveLeft, "BackpackRemoveLeft_");
+		feedbackMap[FeedbackType::BackpackRemoveRight] = Feedback(FeedbackType::BackpackRemoveRight, "BackpackRemoveRight_");
+		feedbackMap[FeedbackType::StomachStore] = Feedback(FeedbackType::StomachStore, "StomachStore_");
+		feedbackMap[FeedbackType::StomachRemove] = Feedback(FeedbackType::StomachRemove, "StomachRemove_");
+		feedbackMap[FeedbackType::ChestStore] = Feedback(FeedbackType::ChestStore, "ChestStore_");
+		feedbackMap[FeedbackType::ChestRemove] = Feedback(FeedbackType::ChestRemove, "ChestRemove_");
+		feedbackMap[FeedbackType::ConsumableDrink] = Feedback(FeedbackType::ConsumableDrink, "ConsumableDrink_");
+		feedbackMap[FeedbackType::ConsumableFood] = Feedback(FeedbackType::ConsumableFood, "ConsumableFood_");
 
 		feedbackMap[FeedbackType::ShoutFire] = Feedback(FeedbackType::ShoutFire, "ShoutFire_");
 		feedbackMap[FeedbackType::ShoutFrost] = Feedback(FeedbackType::ShoutFrost, "ShoutFrost_");
@@ -836,15 +746,15 @@ namespace TactsuitVR {
 		feedbackMap[FeedbackType::ShoutLightning] = Feedback(FeedbackType::ShoutLightning, "ShoutLightning_");
 		feedbackMap[FeedbackType::HiggsPullLeft] = Feedback(FeedbackType::HiggsPullLeft, "HiggsPullLeft_");
 		feedbackMap[FeedbackType::HiggsPullRight] = Feedback(FeedbackType::HiggsPullRight, "HiggsPullRight_");
-		feedbackMap[FeedbackType::PlayerEnvironmentHitLeft] = Feedback(FeedbackType::PlayerEnvironmentHitLeft, "PlayerEnvironmentHitLeft_");
-		feedbackMap[FeedbackType::PlayerEnvironmentHitRight] = Feedback(FeedbackType::PlayerEnvironmentHitRight, "PlayerEnvironmentHitRight_");
+		feedbackMap[FeedbackType::PlayerEnvironmentHitLeft] = Feedback(FeedbackType::PlayerEnvironmentHitLeft, "PlayerEnvironmentHitLeft_", 0);
+		feedbackMap[FeedbackType::PlayerEnvironmentHitRight] = Feedback(FeedbackType::PlayerEnvironmentHitRight, "PlayerEnvironmentHitRight_", 0);
 		feedbackMap[FeedbackType::PlayerThrowLeft] = Feedback(FeedbackType::PlayerThrowLeft, "PlayerThrowLeft_");
 		feedbackMap[FeedbackType::PlayerThrowRight] = Feedback(FeedbackType::PlayerThrowRight, "PlayerThrowRight_");
 		feedbackMap[FeedbackType::PlayerCatchLeft] = Feedback(FeedbackType::PlayerCatchLeft, "PlayerCatchLeft_");
 		feedbackMap[FeedbackType::PlayerCatchRight] = Feedback(FeedbackType::PlayerCatchRight, "PlayerCatchRight_");
 
-		feedbackMap[FeedbackType::PlayerShoutBindHands] = Feedback(FeedbackType::PlayerShoutBindHands, "PlayerShoutBindHands_"); //1
-		feedbackMap[FeedbackType::PlayerShoutBindVest] = Feedback(FeedbackType::PlayerShoutBindVest, "PlayerShoutBindVest_"); //1
+		feedbackMap[FeedbackType::PlayerShoutBindHands] = Feedback(FeedbackType::PlayerShoutBindHands, "PlayerShoutBindHands_");
+		feedbackMap[FeedbackType::PlayerShoutBindVest] = Feedback(FeedbackType::PlayerShoutBindVest, "PlayerShoutBindVest_");
 
 		feedbackMap[FeedbackType::TravelEffect] = Feedback(FeedbackType::TravelEffect, "TravelEffect_");
 		feedbackMap[FeedbackType::Teleport] = Feedback(FeedbackType::Teleport, "Teleport_");
@@ -946,8 +856,8 @@ namespace TactsuitVR {
 		feedbackMap[FeedbackType::MagicRightArmIllusion] = Feedback(FeedbackType::MagicRightArmIllusion, "MagicRightArmIllusion_");
 		feedbackMap[FeedbackType::MagicRightArmRestoration] = Feedback(FeedbackType::MagicRightArmRestoration, "MagicRightArmRestoration_");
 
-		feedbackMap[FeedbackType::HorseRiding] = Feedback(FeedbackType::HorseRiding, "HorseRiding_");
-		feedbackMap[FeedbackType::HorseRidingSlow] = Feedback(FeedbackType::HorseRidingSlow, "HorseRidingSlow_");
+		feedbackMap[FeedbackType::HorseRiding] = Feedback(FeedbackType::HorseRiding, "HorseRiding_", 0);
+		feedbackMap[FeedbackType::HorseRidingSlow] = Feedback(FeedbackType::HorseRidingSlow, "HorseRidingSlow_", 0);
 
 		feedbackMap[FeedbackType::TentacleAttack] = Feedback(FeedbackType::TentacleAttack, "TentacleAttack_");
 
@@ -972,14 +882,81 @@ namespace TactsuitVR {
 		feedbackMap[FeedbackType::PlayerCrossbowKickbackLeft] = Feedback(FeedbackType::PlayerCrossbowKickbackLeft, "PlayerCrossbowKickbackLeft_");
 		feedbackMap[FeedbackType::PlayerCrossbowKickbackRight] = Feedback(FeedbackType::PlayerCrossbowKickbackRight, "PlayerCrossbowKickbackRight_");
 
-		feedbackMap[FeedbackType::Wind] = Feedback(FeedbackType::Wind, "Wind_");
+		feedbackMap[FeedbackType::Wind] = Feedback(FeedbackType::Wind, "Wind_", 0);
 
-		feedbackMap[FeedbackType::MagicArmorSpell] = Feedback(FeedbackType::MagicArmorSpell, "MagicArmorSpell_");
+		feedbackMap[FeedbackType::MagicArmorSpell] = Feedback(FeedbackType::MagicArmorSpell, "MagicArmorSpell_", 10);
 
 
 		feedbackMap[FeedbackType::SpellWheelOpenLeft] = Feedback(FeedbackType::SpellWheelOpenLeft, "SpellWheelOpenLeft_");
 		feedbackMap[FeedbackType::SpellWheelOpenRight] = Feedback(FeedbackType::SpellWheelOpenRight, "SpellWheelOpenRight_");
 
-		feedbackMap[FeedbackType::Default] = Feedback(FeedbackType::Default, "Default_"); //1		
+		feedbackMap[FeedbackType::Default] = Feedback(FeedbackType::Default, "Default_");
+	}
+
+	//=======================================================================================================================
+	// So far these seem unused
+	// =======================================================================================================================
+	void PauseHapticFeedBack(FeedbackType effect)
+	{
+		_MESSAGE("PauseHapticFeedBack with arg");
+		owo->Stop();
+	}
+
+	void PauseHapticFeedBack()
+	{
+		_MESSAGE("PauseHapticFeedBack");
+		owo->Stop();
+	}
+
+	void PauseHapticFeedBackSpellCastingRight()
+	{
+		_MESSAGE("PauseHapticFeedBackSpellCastingRight");
+		owo->Stop();
+		// for each(FeedbackType effectType in spellCastingRight)
+		// {
+		// 	for (int i = 1; i <= feedbackMap[effectType].feedbackFileCount; i++)
+		// 	{
+		// 		TurnOffKey((feedbackMap[effectType].prefix + std::to_string(i)).c_str());
+		// 	}
+		// }
+
+	}
+
+	void PauseHapticFeedBackSpellCastingLeft()
+	{
+		_MESSAGE("PauseHapticFeedBackSpellCastingLeft");
+		owo->Stop();
+		// for each(FeedbackType effectType in spellCastingLeft)
+		// {
+		// 	for (int i = 1; i <= feedbackMap[effectType].feedbackFileCount; i++)
+		// 	{
+		// 		TurnOffKey((feedbackMap[effectType].prefix + std::to_string(i)).c_str());
+		// 	}
+		// }
+	}
+
+	void ProvideDotFeedback(MusclesGroup muscle, int index, int intensity, int durationMillis)
+	{
+		_MESSAGE("ProvideDotFeedback");
+		if (intensity < TOLERANCE)
+			return;
+
+		if (isGameStoppedNoDialogue())
+		{
+			return;
+		}
+
+		if (!systemInitialized)
+			CreateSystem();
+		std::string key;
+
+		//std::vector<bhaptics::DotPoint> points;
+		//bhaptics::DotPoint point = bhaptics::DotPoint(index, intensity);
+		//points.emplace_back(point);
+		//SubmitDot(key.c_str(), position, points, durationMillis);
+
+		//TODO 
+		//owo->Send(new Sensation())
 	}
 }
+

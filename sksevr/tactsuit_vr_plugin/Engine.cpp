@@ -414,7 +414,7 @@ namespace TactsuitVR
 	static RelocPtr<IAnimationGraphManagerHolder_NotifyAnimationGraph_VFunc> IAnimationGraphManagerHolder_NotifyAnimationGraph_vtbl(0x016E2BF8);
 	uint64_t Hooked_IAnimationGraphManagerHolder_NotifyAnimationGraph(uintptr_t* iAnimationGraphManagerHolder, BSFixedString* animationName)
 	{
-		//LOG("Animation Called %s", animationName->data);
+		//_MESSAGE("Animation Called %s", animationName->data);
 
 		const bool isMounted = vlibIsMounted();
 
@@ -4758,7 +4758,7 @@ namespace TactsuitVR
 				if (!ContainsNoCase(model, "po3") && !ContainsNoCase(model, "vibrant") && !ContainsNoCase(model, "conduit") && !ContainsNoCase(model, "cste_") && !ContainsNoCase(model, "weapon") && !ContainsNoCase(model, "axe") && !ContainsNoCase(model, "sword") && !ContainsNoCase(model, "dagger") && !ContainsNoCase(model, "mace"))
 				{
 					//Play appropriate haptic effects
-					LOG("Processing Visual Effect: %s", model.c_str());
+					//_MESSAGE("Processing Visual Effect: %s", model.c_str());
 					if (Contains(model, "dlc1snowelftelekinesishandl"))
 					{
 						feedback = leftHandedMode ? FeedbackType::PlayerSpellWardRight : FeedbackType::PlayerSpellWardLeft;
