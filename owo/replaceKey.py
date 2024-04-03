@@ -33,9 +33,16 @@ def rewrite_files(filenames):
     with open(filename, "r") as file:
       content = file.read()
     modified_content = replace_text_with_filename(content, filename, counter)
-      
+
+    y = content.split('~')
+    x = modified_content.split('~')
+    diff = False
+    for a,b in zip(x[1:], y[1:]):
+      if a != b:
+        diff = True
     counter += 1
-    print(f'Rewritten in {filename} \n {content}  \n {modified_content}')
+    if diff:
+      print(f'Rewritten in {filename} \n {"".join(content[:2]) }  \n {"".join(modified_content[:2])}')
     with open(filename, "w") as file:
       file.write(modified_content)
 
