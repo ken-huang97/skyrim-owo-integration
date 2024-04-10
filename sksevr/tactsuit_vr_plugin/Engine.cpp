@@ -702,6 +702,7 @@ namespace TactsuitVR
 	void SpellCastingEventDecider(bool fireAndForget, bool dual, bool leftHand)
 	{
 		auto player = DYNAMIC_CAST(LookupFormByID(0x14), TESForm, Actor);
+		_MESSAGE("Spell casting event decider");
 
 		if (player != nullptr)
 		{
@@ -944,7 +945,7 @@ namespace TactsuitVR
 	{
 		if (evn)
 		{
-			LOG_ERR("Quest Stage Event: FormId: %x - Stage: %d", evn->formId, evn->stage);
+			// LOG_ERR("Quest Stage Event: FormId: %x - Stage: %d", evn->formId, evn->stage);
 
 			/////High Hrothgar Greybeards speaking to you
 			//Quest Stage Event : FormId: 242ba - Stage : 280
@@ -2206,7 +2207,7 @@ namespace TactsuitVR
 						else
 						{
 							LOG("player attacked by other stuff. FormId: %x FormType: %d", sourceForm->formID, sourceForm->formType);
-							if (!IsPlayingKeyAll(FeedbackType::Explosion))
+							if (!IsPlayingFeedback(FeedbackType::Explosion))
 							{
 								if (randomGenerator(0, 10) == 10)
 								{
@@ -2779,9 +2780,12 @@ namespace TactsuitVR
 
 	EventResult MYSKSEActionEvent::ReceiveEvent(SKSEActionEvent * evn, EventDispatcher<SKSEActionEvent> * dispatcher)
 	{
+		_MESSAGE("SKSE Action Event: Slot:%d Type:%d Name: %s SourceFormId: %x", evn->slot, evn->type, evn->sourceForm != nullptr ? evn->sourceForm->GetName() : "No Name", evn->sourceForm != nullptr ? evn->sourceForm->formID : 0);
 		if (evn->actor == (*g_thePlayer))
 		{
-			//LOG("SKSE Action Event: Slot:%d Type:%d SourceFormId: %x", evn->slot, evn->type, evn->sourceForm !=nullptr ? evn->sourceForm->formID : 0);
+//			_MESSAGE("SKSE Action Event: Slot:%d Type:%d Name: %s SourceFormId: %x", evn->slot, evn->type, evn->sourceForm != nullptr ? evn->sourceForm->GetName() : "No Name", evn->sourceForm != nullptr ? evn->sourceForm->formID : 0);
+
+
 			if(evn->type == evn->kType_BowRelease)
 			{
 				if(evn->sourceForm != nullptr && evn->sourceForm->formType == kFormType_Weapon)
@@ -2804,6 +2808,7 @@ namespace TactsuitVR
 
 				if (spell)
 				{
+					_MESSAGE("Voice Spell event %s", spell->fullName.GetName());
 					if (spell->data.spellType == SpellItem::SpellType::kVoicePower)
 					{
 						if (strcmp(spell->fullName.GetName(), "Bind") == 0)
@@ -2831,7 +2836,8 @@ namespace TactsuitVR
 				{
 					TESShout* shout = DYNAMIC_CAST(sourceForm, TESForm, TESShout);
 					if (shout)
-					{						
+					{
+						_MESSAGE("Voice shout event %s", shout->fullName.GetName());
 						if (strcmp(shout->fullName.GetName(), "Bind") == 0)
 						{
 							ProvideHapticFeedback(0, 0, FeedbackType::PlayerShoutBindVest, intensityMultiplierPlayerShoutBind);
@@ -2848,6 +2854,20 @@ namespace TactsuitVR
 							}
 						}
 					}
+				}
+			} 
+			else if (evn->type == evn->kType_SpellCast || evn->type == evn->kType_SpellFire) {
+
+				TESForm* sourceForm = evn->sourceForm;
+
+				SpellItem* spell = DYNAMIC_CAST(sourceForm, TESForm, SpellItem);
+
+				if (spell)
+				{
+					_MESSAGE("Spell 2 %s", spell->fullName.GetName());
+					std::thread t15(CheckAndPlayMagicArmorSpellEffect, spell);
+					t15.detach();
+
 				}
 			}
 		}		
@@ -2898,7 +2918,7 @@ namespace TactsuitVR
 				LOG("Very Low Health Effect");
 				for (int i = 0; i < 7; i++)
 				{
-					ProvideHapticFeedback(0, 0, FeedbackType::HeartBeatFast, intensityMultiplierHeartBeatFast);
+					ProvideHapticFeedback(0, 0, FeedbackType::HeartBeatFast, intensityMultiplierHeartBeatFast, true);
 					Sleep(428);
 				}
 			}
@@ -2907,7 +2927,7 @@ namespace TactsuitVR
 				LOG("Low Health Effect");
 				for (int i = 0; i < 4; i++)
 				{
-					ProvideHapticFeedback(0, 0, FeedbackType::HeartBeat, intensityMultiplierHeartBeat);
+					ProvideHapticFeedback(0, 0, FeedbackType::HeartBeat, intensityMultiplierHeartBeat, true);
 					Sleep(750);
 				}
 			}
@@ -4106,7 +4126,7 @@ namespace TactsuitVR
 			LOG("You are missing skyrimvrtools.dll!!!!!!!!");
 
 		vr::TrackedDeviceIndex_t controller;
-		LOG("Release burst %s", dual ? "dual" : (leftHand ? "left" : "right"));
+		_MESSAGE("Release burst %s", dual ? "dual" : (leftHand ? "left" : "right"));
 
 		std::vector<unsigned short>* magicArray;
 		auto player = DYNAMIC_CAST(LookupFormByID(0x14), TESForm, Actor);
@@ -4123,6 +4143,8 @@ namespace TactsuitVR
 					bool staff = leftHandObject->IsWeapon();
 					
 					magicArray = DecideSpellType(player->leftHandSpell, staff, true, spellFeedbackType);
+
+					// TODO: Remove this? Since we are adding listening for the spell cast event
 					std::thread t1(CheckAndPlayMagicArmorSpellEffect, player->leftHandSpell);
 					t1.detach();
 				}
@@ -4137,6 +4159,7 @@ namespace TactsuitVR
 					bool staff = rightHandObject->IsWeapon();
 
 					magicArray = DecideSpellType(player->rightHandSpell, staff, false, spellFeedbackType);
+					// TODO: Remove this? Since we are adding listening for the spell cast event
 					std::thread t1(CheckAndPlayMagicArmorSpellEffect, player->rightHandSpell);
 					t1.detach();
 				}
@@ -4154,12 +4177,12 @@ namespace TactsuitVR
 					const float intensity = ((float)magicArray->at(i) / 3999.0f) * (intensityMultiplierPlayerSpell);
 					if (dual)
 					{
-						ProvideHapticFeedback(randomGenerator(0, 359), 0, spellFeedbackType, intensity);
-						ProvideHapticFeedback(randomGenerator(0, 359), 0, GetOtherHandSpellFeedback(spellFeedbackType), intensity);
+						ProvideHapticFeedback(randomGenerator(0, 359), 0, spellFeedbackType, intensity, true);
+						ProvideHapticFeedback(randomGenerator(0, 359), 0, GetOtherHandSpellFeedback(spellFeedbackType), intensity, true);
 					}
 					else
 					{
-						ProvideHapticFeedback(randomGenerator(0, 359), 0, spellFeedbackType, intensity);
+						ProvideHapticFeedback(randomGenerator(0, 359), 0, spellFeedbackType, intensity, true);
 					}
 					Sleep(4);
 				}
@@ -4206,7 +4229,7 @@ namespace TactsuitVR
 
 			if (!gameStopped)
 			{
-				ProvideHapticFeedback(randomGenerator(0, 359), 0, spellFeedbackType, ((float)magicArray->at(i) / 3999.0f) * (staff ? intensityMultiplierPlayerStaff : intensityMultiplierPlayerSpell));
+				ProvideHapticFeedback(randomGenerator(0, 359), 0, spellFeedbackType, ((float)magicArray->at(i) / 3999.0f) * (staff ? intensityMultiplierPlayerStaff : intensityMultiplierPlayerSpell), true);
 			}
 			Sleep(magicsleepduration);
 		}
@@ -4252,7 +4275,7 @@ namespace TactsuitVR
 
 			if (!gameStopped)
 			{
-				ProvideHapticFeedback(randomGenerator(0, 359), 0, spellFeedbackType, ((float)magicArray->at(i) / 3999.0f) * (staff ? intensityMultiplierPlayerStaff : intensityMultiplierPlayerSpell));
+				ProvideHapticFeedback(randomGenerator(0, 359), 0, spellFeedbackType, ((float)magicArray->at(i) / 3999.0f) * (staff ? intensityMultiplierPlayerStaff : intensityMultiplierPlayerSpell), true);
 			}
 			Sleep(magicsleepduration);
 		}
@@ -4398,17 +4421,11 @@ namespace TactsuitVR
 	{
 		if (UseControllerHapticsForEnvironmentAttack && axisId == 0 && pulseDuration == 1199 && device == leftController && !bowPulled.load())
 		{
-			if (!isPlayingHapticFeedBackAttackLeft())
-			{
-				ProvideHapticFeedback(0, 0, FeedbackType::PlayerAttackLeft, intensityMultiplierPlayerEnvironmentAttack, true);
-			}
+			ProvideHapticFeedback(0, 0, FeedbackType::PlayerAttackLeft, intensityMultiplierPlayerEnvironmentAttack, true);
 		}
 		else if (UseControllerHapticsForEnvironmentAttack && axisId == 0 && pulseDuration == 1199 && device == rightController && !bowPulled.load())
 		{
-			if (!isPlayingHapticFeedBackAttackRight())
-			{
-				ProvideHapticFeedback(0, 0, FeedbackType::PlayerAttackRight, intensityMultiplierPlayerEnvironmentAttack, true);
-			}
+			ProvideHapticFeedback(0, 0, FeedbackType::PlayerAttackRight, intensityMultiplierPlayerEnvironmentAttack, true);
 		}
 		else if (axisId == 0 && (pulseDuration == 239 || pulseDuration == 91 || pulseDuration == 92) && !bowPulled.load() && !vlibIsMounted())
 		{
@@ -4544,13 +4561,13 @@ namespace TactsuitVR
 				float heightOffset = intensity - 0.5f;
 				if (leftHandedMode != 0)
 				{
-					ProvideHapticFeedback(0, heightOffset*-1, FeedbackType::PlayerBowPullRight, intensity*intensityMultiplierPlayerBowPullRight);//0.2f
-					ProvideHapticFeedback(0, heightOffset, FeedbackType::PlayerBowPullLeft, intensity*intensityMultiplierPlayerBowPullLeft); // 0.4f
+					ProvideHapticFeedback(0, heightOffset*-1, FeedbackType::PlayerBowPullRight, intensity*intensityMultiplierPlayerBowPullRight, true);//0.2f
+					//ProvideHapticFeedback(0, heightOffset, FeedbackType::PlayerBowPullLeft, intensity*intensityMultiplierPlayerBowPullLeft); // 0.4f
 				}
 				else
 				{
-					ProvideHapticFeedback(0, heightOffset*-1, FeedbackType::PlayerBowPullLeft, intensity*intensityMultiplierPlayerBowPullRight);//0.2f
-					ProvideHapticFeedback(0, heightOffset, FeedbackType::PlayerBowPullRight, intensity*intensityMultiplierPlayerBowPullLeft); // 0.4f
+					ProvideHapticFeedback(0, heightOffset*-1, FeedbackType::PlayerBowPullLeft, intensity*intensityMultiplierPlayerBowPullRight, true);//0.2f
+					//ProvideHapticFeedback(0, heightOffset, FeedbackType::PlayerBowPullRight, intensity*intensityMultiplierPlayerBowPullLeft); // 0.4f
 				}				
 			}
 			else if (device == leftController)
@@ -4571,13 +4588,13 @@ namespace TactsuitVR
 				float heightOffset = intensity - 0.5f;
 				if (leftHandedMode != 0)
 				{
-					ProvideHapticFeedback(0, heightOffset*-1, FeedbackType::PlayerBowPullRight, intensity*intensityMultiplierPlayerBowPullRight);//0.2f
-					ProvideHapticFeedback(0, heightOffset, FeedbackType::PlayerBowPullLeft, intensity*intensityMultiplierPlayerBowPullLeft); // 0.4f
+					//ProvideHapticFeedback(0, heightOffset*-1, FeedbackType::PlayerBowPullRight, intensity*intensityMultiplierPlayerBowPullRight);//0.2f
+					ProvideHapticFeedback(0, heightOffset, FeedbackType::PlayerBowPullLeft, intensity*intensityMultiplierPlayerBowPullLeft, true); // 0.4f
 				}
 				else
 				{
-					ProvideHapticFeedback(0, heightOffset*-1, FeedbackType::PlayerBowPullLeft, intensity*intensityMultiplierPlayerBowPullRight);//0.2f
-					ProvideHapticFeedback(0, heightOffset, FeedbackType::PlayerBowPullRight, intensity*intensityMultiplierPlayerBowPullLeft); // 0.4f
+					//ProvideHapticFeedback(0, heightOffset*-1, FeedbackType::PlayerBowPullLeft, intensity*intensityMultiplierPlayerBowPullRight);//0.2f
+					ProvideHapticFeedback(0, heightOffset, FeedbackType::PlayerBowPullRight, intensity*intensityMultiplierPlayerBowPullLeft, true); // 0.4f
 				}
 			}
 		}
@@ -4617,7 +4634,7 @@ namespace TactsuitVR
 	{
 		while (bowPulled.load())
 		{
-			ProvideHapticFeedback(0, 0, PlayerBowHoldType, intensityMultiplierPlayerBowHold);//0.3f);
+			ProvideHapticFeedback(0, 0, PlayerBowHoldType, intensityMultiplierPlayerBowHold, true);//0.3f);
 			
 			Sleep(bowsleepduration);
 		}
@@ -5159,7 +5176,7 @@ namespace TactsuitVR
 	{
 		LOG("HIGGS hand collide effect on %s hand %g mass with %g velocity", isLeft ? "left" : "right", mass, separatingVelocity);
 
-		ProvideHapticFeedback(0, 0, isLeft ? PlayerEnvironmentHitLeft : PlayerEnvironmentHitRight, intensityMultiplierPlayerEnvironmentHit * (mass * (separatingVelocity / 5000.0f)));
+		ProvideHapticFeedback(0, 0, isLeft ? PlayerEnvironmentHitLeft : PlayerEnvironmentHitRight, intensityMultiplierPlayerEnvironmentHit * (mass * (separatingVelocity / 5000.0f) / 4));
 	}
 
 	void higgsconsume(bool isLeft, TESForm* consumedForm)

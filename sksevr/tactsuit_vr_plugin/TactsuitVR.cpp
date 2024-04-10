@@ -20,7 +20,7 @@ namespace TactsuitVR {
 	std::clock_t startTime;
 
 	std::unordered_map<FeedbackType, Feedback> feedbackMap;
-	std::unordered_map<std::string, sharedPtr<BakedSensation>> unknownFeedbackMap;
+	std::unordered_map<std::string, Feedback> unknownFeedbackMap;
 
 	std::vector<FeedbackType> spellCastingRight = { FeedbackType::PlayerSpellAlterationRight, FeedbackType::PlayerSpellConjurationRight, FeedbackType::PlayerSpellFireRight, FeedbackType::PlayerSpellIceRight, FeedbackType::PlayerSpellIllusionRight, FeedbackType::PlayerSpellLightRight, FeedbackType::PlayerSpellOtherRight, FeedbackType::PlayerSpellRestorationRight, FeedbackType::PlayerSpellShockRight, FeedbackType::PlayerSpellWardRight };
 	std::vector<FeedbackType> spellCastingLeft = { FeedbackType::PlayerSpellAlterationLeft, FeedbackType::PlayerSpellConjurationLeft, FeedbackType::PlayerSpellFireLeft, FeedbackType::PlayerSpellIceLeft, FeedbackType::PlayerSpellIllusionLeft, FeedbackType::PlayerSpellLightLeft, FeedbackType::PlayerSpellOtherLeft, FeedbackType::PlayerSpellRestorationLeft, FeedbackType::PlayerSpellShockLeft, FeedbackType::PlayerSpellWardLeft };
@@ -122,11 +122,16 @@ namespace TactsuitVR {
 		sharedPtr<BakedSensation> sensation(BakedSensationsParser::Parse(tactFileStr));
 		sensation->SetPriority(2);
 
-		if (unknownFeedbackMap.find(filename) != unknownFeedbackMap.end()) {
+		auto sensName = removeOwoExtension(filename);
+
+		// TODO support this
+		if (unknownFeedbackMap.find(sensName) != unknownFeedbackMap.end()) {
 			_MESSAGE("Duplicate unknown files found for %s. Overwriting", filename.c_str());
 		}
-		auto sensName = removeOwoExtension(filename);
-		unknownFeedbackMap[sensName] = sensation;
+
+		Feedback feedback(FeedbackType::Default, sensName);
+		feedback.feedbackSensations.push_back(sensation);
+		unknownFeedbackMap[sensName] = feedback;
 		_MESSAGE("Added %s to unknown feedback %s", filename.c_str(), sensName.c_str());
 
 		return sensation;
@@ -186,43 +191,9 @@ namespace TactsuitVR {
 		return ret;
 	}
 
-	bool isPlayingHapticFeedBackAttackRight()
-	{
-		_MESSAGE("isPlayingHapticFeedBackAttackRight");
-		// for each (FeedbackType effectType in playerAttackingRight)
-		// {
-		// 	for (int i = 1; i <= feedbackMap[effectType].feedbackFileCount; i++)
-		// 	{
-		// 		std::string key = feedbackMap[effectType].prefix + std::to_string(i);
-		// 		if (IsPlayingKey(key.c_str()))
-		// 		{
-		// 			return true;
-		// 		}
-		// 	}
-		// }
-		return false;
-	}
-
-	bool isPlayingHapticFeedBackAttackLeft()
-	{
-		_MESSAGE("isPlayingHapticFeedBackAttackLeft");
-		// for each (FeedbackType effectType in playerAttackingLeft)
-		// {
-		// 	for (int i = 1; i <= feedbackMap[effectType].feedbackFileCount; i++)
-		// 	{
-		// 		std::string key = feedbackMap[effectType].prefix + std::to_string(i);
-		// 		if (IsPlayingKey(key.c_str()))
-		// 		{
-		// 			return true;
-		// 		}
-		// 	}
-		// }
-		return false;
-	}
-
 	void ProvideHapticFeedback(float locationAngle, float locationHeight, FeedbackType effect, float intensityMultiplier, bool waitToPlay, bool playInMenu)
 	{
-		// _MESSAGE("ProvideHapticFeedback %s %f %f", feedbackTypeToString(effect).c_str(), locationAngle, locationHeight);
+		//_MESSAGE("ProvideHapticFeedback");
 		if (intensityMultiplier > TOLERANCE)
 		{
 			std::thread t0(ProvideHapticFeedbackThread, locationAngle, locationHeight, effect, intensityMultiplier, waitToPlay, playInMenu);
@@ -230,20 +201,26 @@ namespace TactsuitVR {
 		}
 	}
 
-	bool IsPlayingKeyAll(FeedbackType effect)
+	// This approximates IsPlayingFeedback, since it uses expiry time instead of actually checking if it's currently playing.
+	// If another sensation plays after one is playing, this may be inaccurate
+	bool IsPlayingFeedback(Feedback& feedback)
 	{
-		_MESSAGE("IsPlayingKeyAll %s", feedbackTypeToString(effect).c_str());
-		// std::string prefix = feedbackMap[effect].prefix;
-		// int feedbackFileCount = feedbackMap[effect].feedbackFileCount;
-		// for (int i = 1; i <= feedbackFileCount; i++)
-		// {
-		// 	std::string key = prefix + std::to_string(i);
-		// 	if (IsPlayingKey(key.c_str()))
-		// 	{
-		// 		return true;
-		// 	}
-		// }
-		return false;
+		auto ret = getTimeSinceStart() <= feedback.expiryTime;
+		/*
+		if (ret) {
+			_MESSAGE("IsPlayingFeedback %s true", feedbackTypeToString(feedback.feedbackType).c_str());
+		}
+		else {
+			_MESSAGE("IsPlayingFeedback %s false", feedbackTypeToString(feedback.feedbackType).c_str());
+		}*/
+		return ret;
+	}
+
+	// This approximates IsPlayingFeedback, since it uses expiry time instead of actually checking if it's currently playing.
+	// If another sensation plays after one is playing, this may be inaccurate
+	bool IsPlayingFeedback(FeedbackType feedbackType)
+	{
+		return IsPlayingFeedback(feedbackMap[feedbackType]);
 	}
 
 	void LateFeedback(float locationAngle, FeedbackType feedback, float intensity, int sleepAmount, int count, bool waitToPlay, bool playInMenu)
@@ -298,8 +275,8 @@ namespace TactsuitVR {
 		return (parts.size() >= 4) ? parts[2] : input;
 	}
 
-
 	void sendSensation(float locationAngle, float locationHeight, sharedPtr<BakedSensation> sensation) {
+		//_MESSAGE("sendSensation");
 		if (owo->State() != ConnectionState::Connected) {
 			_MESSAGE("WARN: Not connected. Skipping.");
 			return;
@@ -308,7 +285,6 @@ namespace TactsuitVR {
 		// auto sensationWithId = SensationsParser::Parse(std::to_string(sensation->id));
 		auto sensationWithId = SensationsParser::Parse(unbake(sensation->Stringify()));
 		sensationWithId->SetPriority(sensation->GetPriority());
-
 		if (locationHeight < -0.5f)
 			locationHeight = -0.5f;
 		else if (locationHeight > 0.5f)
@@ -325,45 +301,58 @@ namespace TactsuitVR {
 		}
 	}
 
-	void ProvideHapticFeedbackThread(float locationAngle, float locationHeight, FeedbackType effect, float intensityMultiplier, bool waitToPlay, bool playInMenu)
-	{
-		_MESSAGE("ProvideHapticFeedbackThread %s %f %f", feedbackTypeToString(effect).c_str(), locationAngle, locationHeight);
-		if (intensityMultiplier < TOLERANCE)
-			return;
+	std::shared_ptr<BakedSensation> getRandomSensation(Feedback& feedback) {
+		//TODO only need to store the ID and whether it needs muscle?
 
-		if (isGameStoppedNoDialogue() && !playInMenu)
-		{
+		std::vector<std::shared_ptr<BakedSensation>>& feedbackSensations = feedback.feedbackSensations;
+		return feedbackSensations[(randi(0, feedbackSensations.size() - 1))];
+	}
+
+	void sendFeedback(float locationAngle, float locationHeight, Feedback& feedback, float intensityMultiplier, bool waitToPlay)
+	{
+		//_MESSAGE("sendFeedback");
+		if (intensityMultiplier < TOLERANCE || (isGameStoppedNoDialogue()))
 			return;
-		}
 
 		if (!systemInitialized)
 			CreateSystem();
 
+		if (feedback.feedbackSensations.size() > 0)
+		{
+			if (waitToPlay && IsPlayingFeedback(feedback))
+			{
+				return;
+			}
+
+
+			auto sensation = getRandomSensation(feedback);
+			
+			auto durationSecs = (long double)sensation->TotalDuration();
+			auto timeSinceStartSecs = (long double) getTimeSinceStart() / CLOCKS_PER_SEC;
+			feedback.expiryTime = static_cast<clock_t>((durationSecs + timeSinceStartSecs) * CLOCKS_PER_SEC);
+			//_MESSAGE("Sending %s Expiry: %Lf Current time %Lf", feedbackTypeToString(feedback.feedbackType).c_str(), (long double) feedback.expiryTime / CLOCKS_PER_SEC, timeSinceStartSecs);
+
+			sendSensation(locationAngle, locationHeight, sensation);
+		}
+		else
+		{
+			_MESSAGE("Warn: No file found for %s", feedback.prefix.c_str());
+		}
+	}
+
+	void ProvideHapticFeedbackThread(float locationAngle, float locationHeight, FeedbackType effect, float intensityMultiplier, bool waitToPlay, bool playInMenu)
+	{
+		//_MESSAGE("ProvideHapticFeedbackThread");
+		//_MESSAGE("ProvideHapticFeedbackThread %s %f %f", feedbackTypeToString(effect).c_str(), locationAngle, locationHeight);
+		if (isGameStoppedNoDialogue() && !playInMenu)
+			return;
+
 		if (feedbackMap.find(effect) != feedbackMap.end())
 		{
-			if (feedbackMap[effect].feedbackSensations.size() > 0)
-			{
-				if (waitToPlay)
-				{
-					if (IsPlayingKeyAll(effect))
-					{
-						return;
-					}
-				}
-
-				//TODO only need to store the ID and whether it needs muscle?
-				std::vector<std::shared_ptr<BakedSensation>> & feedbackSensations = feedbackMap[effect].feedbackSensations;
-				std::shared_ptr<BakedSensation> sensation(feedbackSensations[(randi(0, feedbackSensations.size()-1))]);
-
-				sendSensation(locationAngle, locationHeight, sensation);
-			}
-			else
-			{
-				_MESSAGE("Warn: No file found for %s", feedbackMap[effect].prefix.c_str());
-			}
+			sendFeedback(locationAngle, locationHeight, feedbackMap[effect], intensityMultiplier, waitToPlay);
 		}
 		else {
-			_MESSAGE("Warn: feedback not in map %s", feedbackMap[effect].prefix.c_str());
+			_MESSAGE("Warn: feedback not in map %s", feedbackTypeToString(effect));
 		}
 	}
 
@@ -374,28 +363,18 @@ namespace TactsuitVR {
 
 	void ProvideHapticFeedbackSpecificFile(float locationAngle, float locationHeight, std::string feedbackFileName, float intensityMultiplier, bool waitToPlay)
 	{
+		//_MESSAGE("ProvideHapticFeedbackSpecificFile");
 		auto feedbackType = stringToFeedbackType(remove_after_underscore(feedbackFileName));
 
 		if (feedbackType != FeedbackType::Default) {
 			return ProvideHapticFeedback(locationAngle, locationHeight, feedbackType, intensityMultiplier, waitToPlay);
 		} else {
-			return ProvideHapticFeedbackThreadSpecificFile(locationAngle, locationHeight, feedbackFileName, intensityMultiplier, waitToPlay);
+			if (intensityMultiplier > TOLERANCE)
+			{
+				std::thread t0(sendFeedback, locationAngle, locationHeight, unknownFeedbackMap[feedbackFileName], intensityMultiplier, waitToPlay);
+				t0.detach();
+			}
 		}
-	}
-
-	void ProvideHapticFeedbackThreadSpecificFile(float locationAngle, float locationHeight, std::string feedbackFileName, float intensityMultiplier, bool waitToPlay)
-	{
-		_MESSAGE("ProvideHapticFeedbackThreadSpecificFile %s %f %f", feedbackFileName.c_str(), locationAngle, locationHeight);
-		if (intensityMultiplier < TOLERANCE || isGameStoppedNoDialogue()) return;
-		if (!systemInitialized) CreateSystem();
-
-		//if (waitToPlay)
-		//{
-		//	if (IsPlayingKey(feedbackFileName.c_str()))
-		//		return;
-		//}
-
-		sendSensation(locationAngle, locationHeight, unknownFeedbackMap[feedbackFileName]);
 	}
 
 	static const std::unordered_map<FeedbackType, std::string> feedbackStringMap = {
@@ -789,45 +768,45 @@ namespace TactsuitVR {
 		feedbackMap[FeedbackType::EnvironmentalElectricCloak] = Feedback(FeedbackType::EnvironmentalElectricCloak, "EnvironmentalElectricCloak_");
 		feedbackMap[FeedbackType::EnvironmentalFrostCloak] = Feedback(FeedbackType::EnvironmentalFrostCloak, "EnvironmentalFrostCloak_");
 
-		feedbackMap[FeedbackType::UnarmedDefault] = Feedback(FeedbackType::UnarmedDefault, "UnarmedDefault_");
-		feedbackMap[FeedbackType::UnarmedDragon] = Feedback(FeedbackType::UnarmedDragon, "UnarmedDragon_");
-		feedbackMap[FeedbackType::UnarmedFrostbiteSpider] = Feedback(FeedbackType::UnarmedFrostbiteSpider, "UnarmedFrostbiteSpider_");
-		feedbackMap[FeedbackType::UnarmedSabreCat] = Feedback(FeedbackType::UnarmedSabreCat, "UnarmedSabreCat_");
-		feedbackMap[FeedbackType::UnarmedSkeever] = Feedback(FeedbackType::UnarmedSkeever, "UnarmedSkeever_");
-		feedbackMap[FeedbackType::UnarmedSlaughterfish] = Feedback(FeedbackType::UnarmedSlaughterfish, "UnarmedSlaughterfish_");
-		feedbackMap[FeedbackType::UnarmedWisp] = Feedback(FeedbackType::UnarmedWisp, "UnarmedWisp_");
-		feedbackMap[FeedbackType::UnarmedDragonPriest] = Feedback(FeedbackType::UnarmedDragonPriest, "UnarmedDragonPriest_");
-		feedbackMap[FeedbackType::UnarmedDraugr] = Feedback(FeedbackType::UnarmedDraugr, "UnarmedDraugr_");
-		feedbackMap[FeedbackType::UnarmedWolf] = Feedback(FeedbackType::UnarmedWolf, "UnarmedWolf_");
-		feedbackMap[FeedbackType::UnarmedGiant] = Feedback(FeedbackType::UnarmedGiant, "UnarmedGiant_");
-		feedbackMap[FeedbackType::UnarmedIceWraith] = Feedback(FeedbackType::UnarmedIceWraith, "UnarmedIceWraith_");
-		feedbackMap[FeedbackType::UnarmedChaurus] = Feedback(FeedbackType::UnarmedChaurus, "UnarmedChaurus_");
-		feedbackMap[FeedbackType::UnarmedMammoth] = Feedback(FeedbackType::UnarmedMammoth, "UnarmedMammoth_");
-		feedbackMap[FeedbackType::UnarmedFrostAtronach] = Feedback(FeedbackType::UnarmedFrostAtronach, "UnarmedFrostAtronach_");
-		feedbackMap[FeedbackType::UnarmedFalmer] = Feedback(FeedbackType::UnarmedFalmer, "UnarmedFalmer_");
-		feedbackMap[FeedbackType::UnarmedHorse] = Feedback(FeedbackType::UnarmedHorse, "UnarmedHorse_");
-		feedbackMap[FeedbackType::UnarmedStormAtronach] = Feedback(FeedbackType::UnarmedStormAtronach, "UnarmedStormAtronach_");
-		feedbackMap[FeedbackType::UnarmedElk] = Feedback(FeedbackType::UnarmedElk, "UnarmedElk_");
-		feedbackMap[FeedbackType::UnarmedDwarvenSphere] = Feedback(FeedbackType::UnarmedDwarvenSphere, "UnarmedDwarvenSphere_");
-		feedbackMap[FeedbackType::UnarmedDwarvenSteam] = Feedback(FeedbackType::UnarmedDwarvenSteam, "UnarmedDwarvenSteam_");
-		feedbackMap[FeedbackType::UnarmedDwarvenSpider] = Feedback(FeedbackType::UnarmedDwarvenSpider, "UnarmedDwarvenSpider_");
-		feedbackMap[FeedbackType::UnarmedBear] = Feedback(FeedbackType::UnarmedBear, "UnarmedBear_");
-		feedbackMap[FeedbackType::UnarmedFlameAtronach] = Feedback(FeedbackType::UnarmedFlameAtronach, "UnarmedFlameAtronach_");
-		feedbackMap[FeedbackType::UnarmedWitchlight] = Feedback(FeedbackType::UnarmedWitchlight, "UnarmedWitchlight_");
-		feedbackMap[FeedbackType::UnarmedHorker] = Feedback(FeedbackType::UnarmedHorker, "UnarmedHorker_");
-		feedbackMap[FeedbackType::UnarmedTroll] = Feedback(FeedbackType::UnarmedTroll, "UnarmedTroll_");
-		feedbackMap[FeedbackType::UnarmedHagraven] = Feedback(FeedbackType::UnarmedHagraven, "UnarmedHagraven_");
-		feedbackMap[FeedbackType::UnarmedSpriggan] = Feedback(FeedbackType::UnarmedSpriggan, "UnarmedSpriggan_");
-		feedbackMap[FeedbackType::UnarmedMudcrab] = Feedback(FeedbackType::UnarmedMudcrab, "UnarmedMudcrab_");
-		feedbackMap[FeedbackType::UnarmedWerewolf] = Feedback(FeedbackType::UnarmedWerewolf, "UnarmedWerewolf_");
-		feedbackMap[FeedbackType::UnarmedChaurusFlyer] = Feedback(FeedbackType::UnarmedChaurusFlyer, "UnarmedChaurusFlyer_");
-		feedbackMap[FeedbackType::UnarmedGargoyle] = Feedback(FeedbackType::UnarmedGargoyle, "UnarmedGargoyle_");
-		feedbackMap[FeedbackType::UnarmedRiekling] = Feedback(FeedbackType::UnarmedRiekling, "UnarmedRiekling_");
-		feedbackMap[FeedbackType::UnarmedScrib] = Feedback(FeedbackType::UnarmedScrib, "UnarmedScrib_");
-		feedbackMap[FeedbackType::UnarmedSeeker] = Feedback(FeedbackType::UnarmedSeeker, "UnarmedSeeker_");
-		feedbackMap[FeedbackType::UnarmedMountedRiekling] = Feedback(FeedbackType::UnarmedMountedRiekling, "UnarmedMountedRiekling_");
-		feedbackMap[FeedbackType::UnarmedNetch] = Feedback(FeedbackType::UnarmedNetch, "UnarmedNetch_");
-		feedbackMap[FeedbackType::UnarmedBenthicLurker] = Feedback(FeedbackType::UnarmedBenthicLurker, "UnarmedBenthicLurker_");
+		feedbackMap[FeedbackType::UnarmedDefault] = Feedback(FeedbackType::UnarmedDefault, "UnarmedDefault_", 20);
+		feedbackMap[FeedbackType::UnarmedDragon] = Feedback(FeedbackType::UnarmedDragon, "UnarmedDragon_", 20);
+		feedbackMap[FeedbackType::UnarmedFrostbiteSpider] = Feedback(FeedbackType::UnarmedFrostbiteSpider, "UnarmedFrostbiteSpider_", 20);
+		feedbackMap[FeedbackType::UnarmedSabreCat] = Feedback(FeedbackType::UnarmedSabreCat, "UnarmedSabreCat_", 20);
+		feedbackMap[FeedbackType::UnarmedSkeever] = Feedback(FeedbackType::UnarmedSkeever, "UnarmedSkeever_", 20);
+		feedbackMap[FeedbackType::UnarmedSlaughterfish] = Feedback(FeedbackType::UnarmedSlaughterfish, "UnarmedSlaughterfish_", 20);
+		feedbackMap[FeedbackType::UnarmedWisp] = Feedback(FeedbackType::UnarmedWisp, "UnarmedWisp_", 20);
+		feedbackMap[FeedbackType::UnarmedDragonPriest] = Feedback(FeedbackType::UnarmedDragonPriest, "UnarmedDragonPriest_", 20);
+		feedbackMap[FeedbackType::UnarmedDraugr] = Feedback(FeedbackType::UnarmedDraugr, "UnarmedDraugr_", 20);
+		feedbackMap[FeedbackType::UnarmedWolf] = Feedback(FeedbackType::UnarmedWolf, "UnarmedWolf_", 20);
+		feedbackMap[FeedbackType::UnarmedGiant] = Feedback(FeedbackType::UnarmedGiant, "UnarmedGiant_", 20);
+		feedbackMap[FeedbackType::UnarmedIceWraith] = Feedback(FeedbackType::UnarmedIceWraith, "UnarmedIceWraith_", 20);
+		feedbackMap[FeedbackType::UnarmedChaurus] = Feedback(FeedbackType::UnarmedChaurus, "UnarmedChaurus_", 20);
+		feedbackMap[FeedbackType::UnarmedMammoth] = Feedback(FeedbackType::UnarmedMammoth, "UnarmedMammoth_", 20);
+		feedbackMap[FeedbackType::UnarmedFrostAtronach] = Feedback(FeedbackType::UnarmedFrostAtronach, "UnarmedFrostAtronach_", 20);
+		feedbackMap[FeedbackType::UnarmedFalmer] = Feedback(FeedbackType::UnarmedFalmer, "UnarmedFalmer_", 20);
+		feedbackMap[FeedbackType::UnarmedHorse] = Feedback(FeedbackType::UnarmedHorse, "UnarmedHorse_", 20);
+		feedbackMap[FeedbackType::UnarmedStormAtronach] = Feedback(FeedbackType::UnarmedStormAtronach, "UnarmedStormAtronach_", 20);
+		feedbackMap[FeedbackType::UnarmedElk] = Feedback(FeedbackType::UnarmedElk, "UnarmedElk_", 20);
+		feedbackMap[FeedbackType::UnarmedDwarvenSphere] = Feedback(FeedbackType::UnarmedDwarvenSphere, "UnarmedDwarvenSphere_", 20);
+		feedbackMap[FeedbackType::UnarmedDwarvenSteam] = Feedback(FeedbackType::UnarmedDwarvenSteam, "UnarmedDwarvenSteam_", 20);
+		feedbackMap[FeedbackType::UnarmedDwarvenSpider] = Feedback(FeedbackType::UnarmedDwarvenSpider, "UnarmedDwarvenSpider_", 20);
+		feedbackMap[FeedbackType::UnarmedBear] = Feedback(FeedbackType::UnarmedBear, "UnarmedBear_", 20);
+		feedbackMap[FeedbackType::UnarmedFlameAtronach] = Feedback(FeedbackType::UnarmedFlameAtronach, "UnarmedFlameAtronach_", 20);
+		feedbackMap[FeedbackType::UnarmedWitchlight] = Feedback(FeedbackType::UnarmedWitchlight, "UnarmedWitchlight_", 20);
+		feedbackMap[FeedbackType::UnarmedHorker] = Feedback(FeedbackType::UnarmedHorker, "UnarmedHorker_", 20);
+		feedbackMap[FeedbackType::UnarmedTroll] = Feedback(FeedbackType::UnarmedTroll, "UnarmedTroll_", 20);
+		feedbackMap[FeedbackType::UnarmedHagraven] = Feedback(FeedbackType::UnarmedHagraven, "UnarmedHagraven_", 20);
+		feedbackMap[FeedbackType::UnarmedSpriggan] = Feedback(FeedbackType::UnarmedSpriggan, "UnarmedSpriggan_", 20);
+		feedbackMap[FeedbackType::UnarmedMudcrab] = Feedback(FeedbackType::UnarmedMudcrab, "UnarmedMudcrab_", 20);
+		feedbackMap[FeedbackType::UnarmedWerewolf] = Feedback(FeedbackType::UnarmedWerewolf, "UnarmedWerewolf_", 20);
+		feedbackMap[FeedbackType::UnarmedChaurusFlyer] = Feedback(FeedbackType::UnarmedChaurusFlyer, "UnarmedChaurusFlyer_", 20);
+		feedbackMap[FeedbackType::UnarmedGargoyle] = Feedback(FeedbackType::UnarmedGargoyle, "UnarmedGargoyle_", 20);
+		feedbackMap[FeedbackType::UnarmedRiekling] = Feedback(FeedbackType::UnarmedRiekling, "UnarmedRiekling_", 20);
+		feedbackMap[FeedbackType::UnarmedScrib] = Feedback(FeedbackType::UnarmedScrib, "UnarmedScrib_", 20);
+		feedbackMap[FeedbackType::UnarmedSeeker] = Feedback(FeedbackType::UnarmedSeeker, "UnarmedSeeker_", 20);
+		feedbackMap[FeedbackType::UnarmedMountedRiekling] = Feedback(FeedbackType::UnarmedMountedRiekling, "UnarmedMountedRiekling_", 20);
+		feedbackMap[FeedbackType::UnarmedNetch] = Feedback(FeedbackType::UnarmedNetch, "UnarmedNetch_", 20);
+		feedbackMap[FeedbackType::UnarmedBenthicLurker] = Feedback(FeedbackType::UnarmedBenthicLurker, "UnarmedBenthicLurker_", 20);
 
 		feedbackMap[FeedbackType::DefaultHead] = Feedback(FeedbackType::DefaultHead, "DefaultHead_");
 		feedbackMap[FeedbackType::UnarmedHead] = Feedback(FeedbackType::UnarmedHead, "UnarmedHead_");

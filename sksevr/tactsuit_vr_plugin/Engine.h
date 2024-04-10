@@ -817,7 +817,7 @@ namespace TactsuitVR {
 	STATIC_ASSERT(sizeof(BGSWaterSystemManager) == 0x130);
 
 
-
+	void CheckAndPlayMagicArmorSpellEffect(SpellItem* spell);
 
 	///////////////////////////////////////
 	//void SkyVRaanHooks();

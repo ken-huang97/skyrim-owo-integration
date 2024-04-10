@@ -287,10 +287,12 @@ namespace TactsuitVR
 			feedbackType = _feedbackType;
 			prefix = _prefix;
 			priority = _priority;
+			expiryTime = std::clock_t(0L);
 		}
 		FeedbackType feedbackType;
 		std::string prefix;
 		int priority;
+		std::clock_t expiryTime;
 		std::vector<std::shared_ptr<OWOGame::BakedSensation>> feedbackSensations = std::vector<std::shared_ptr<OWOGame::BakedSensation>>();
 	};
 
@@ -307,13 +309,11 @@ namespace TactsuitVR
 	void PauseHapticFeedBack();
 	void PauseHapticFeedBackSpellCastingRight();
 	void PauseHapticFeedBackSpellCastingLeft();
-	bool isPlayingHapticFeedBackAttackLeft();
-	bool isPlayingHapticFeedBackAttackRight();
 	void LateFeedback(float locationAngle, FeedbackType feedback, float intensity, int sleepAmount, int count, bool waitToPlay, bool playInMenu);
-	bool IsPlayingKeyAll(FeedbackType effect);
+	bool IsPlayingFeedback(Feedback& feedback);
+	bool IsPlayingFeedback(FeedbackType feedback);
 
 	void ProvideHapticFeedbackSpecificFile(float locationAngle, float locationHeight, std::string feedbackFileName, float intensityMultiplier, bool waitToPlay);
-	void ProvideHapticFeedbackThreadSpecificFile(float locationAngle, float locationHeight, std::string feedbackFileName, float intensityMultiplier, bool waitToPlay);
 
 	void CreateSystem();
 	void owoUpdateLoop();
