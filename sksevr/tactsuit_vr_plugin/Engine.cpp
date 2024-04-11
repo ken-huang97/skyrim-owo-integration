@@ -2780,7 +2780,7 @@ namespace TactsuitVR
 
 	EventResult MYSKSEActionEvent::ReceiveEvent(SKSEActionEvent * evn, EventDispatcher<SKSEActionEvent> * dispatcher)
 	{
-		_MESSAGE("SKSE Action Event: Slot:%d Type:%d Name: %s SourceFormId: %x", evn->slot, evn->type, evn->sourceForm != nullptr ? evn->sourceForm->GetName() : "No Name", evn->sourceForm != nullptr ? evn->sourceForm->formID : 0);
+		//_MESSAGE("SKSE Action Event: Slot:%d Type:%d Name: %s SourceFormId: %x", evn->slot, evn->type, evn->sourceForm != nullptr ? evn->sourceForm->GetName() : "No Name", evn->sourceForm != nullptr ? evn->sourceForm->formID : 0);
 		if (evn->actor == (*g_thePlayer))
 		{
 //			_MESSAGE("SKSE Action Event: Slot:%d Type:%d Name: %s SourceFormId: %x", evn->slot, evn->type, evn->sourceForm != nullptr ? evn->sourceForm->GetName() : "No Name", evn->sourceForm != nullptr ? evn->sourceForm->formID : 0);
@@ -3540,6 +3540,10 @@ namespace TactsuitVR
 												//Play drowning effect
 												ProvideHapticFeedback(0, 0, FeedbackType::DrowningEffectVest, intensityMultiplierDrowningVest, true);
 												ProvideHapticFeedback(0, 0, FeedbackType::DrowningEffectHead, intensityMultiplierDrowningHead, true);
+											}
+											else {
+												float intensity = magnitude(vestVelocity) / 150.0f;
+												ProvideHapticFeedback(0, 0, FeedbackType::SwimVest100, intensity * intensityMultiplierPlayerSwimming);
 											}
 										}
 									}

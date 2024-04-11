@@ -100,6 +100,7 @@ namespace TactsuitVR {
 		if (feedbackMap.find(feedback.feedbackType) != feedbackMap.end())
 		{
 			feedbackMap[feedback.feedbackType].feedbackSensations.push_back(sensation);
+			_MESSAGE("Added sensation with duration %f to %s", sensation->TotalDuration(), feedbackTypeToString(feedback.feedbackType));
 		}
 		else {
 			_MESSAGE("WARN: This should not have happened: No feedback in map exists for %s", filename.c_str());
