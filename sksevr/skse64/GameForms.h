@@ -195,6 +195,7 @@ public:
  *		8E			ActiveMagicEffect
  */
 
+
 enum FormType {
 	kFormType_None = 0,				//	NONE
 	kFormType_TES4,					//	TES4

@@ -40,6 +40,8 @@ void SetupReceptors()
 		TactsuitVR::g_TESEquipEventDispatcher = (EventDispatcher<TESEquipEvent>*)(&(edl->unk4D0));
 		TactsuitVR::g_TESEquipEventDispatcher->AddEventSink(&TactsuitVR::g_TESEquipEventHandler);
 
+		TactsuitVR::g_ActiveEffectApplyRemoveEventDispatcher = (EventDispatcher<TESActiveEffectApplyRemoveEvent>*)(&(edl->unkB0));
+		TactsuitVR::g_ActiveEffectApplyRemoveEventDispatcher->AddEventSink(&TactsuitVR::g_ActiveEffectApplyRemoveEventHandler);
 
 		TactsuitVR::g_TESQuestStageEventDispatcher = (EventDispatcher<TESQuestStageEvent>*)(&(edl->unkAA8));
 		TactsuitVR::g_TESQuestStageEventDispatcher->AddEventSink(&TactsuitVR::g_TESQuestStageEventHandler);

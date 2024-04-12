@@ -2808,7 +2808,7 @@ namespace TactsuitVR
 
 				if (spell)
 				{
-					_MESSAGE("Voice Spell event %s", spell->fullName.GetName());
+					//_MESSAGE("Voice Spell event %s", spell->fullName.GetName());
 					if (spell->data.spellType == SpellItem::SpellType::kVoicePower)
 					{
 						if (strcmp(spell->fullName.GetName(), "Bind") == 0)
@@ -2837,7 +2837,7 @@ namespace TactsuitVR
 					TESShout* shout = DYNAMIC_CAST(sourceForm, TESForm, TESShout);
 					if (shout)
 					{
-						_MESSAGE("Voice shout event %s", shout->fullName.GetName());
+						//_MESSAGE("Voice shout event %s", shout->fullName.GetName());
 						if (strcmp(shout->fullName.GetName(), "Bind") == 0)
 						{
 							ProvideHapticFeedback(0, 0, FeedbackType::PlayerShoutBindVest, intensityMultiplierPlayerShoutBind);
@@ -2864,10 +2864,8 @@ namespace TactsuitVR
 
 				if (spell)
 				{
-					_MESSAGE("Spell 2 %s", spell->fullName.GetName());
 					std::thread t15(CheckAndPlayMagicArmorSpellEffect, spell);
 					t15.detach();
-
 				}
 			}
 		}		
@@ -4337,6 +4335,65 @@ namespace TactsuitVR
 
 		return EventResult::kEvent_Continue;
 	}
+
+	EventDispatcher<TESActiveEffectApplyRemoveEvent>* g_ActiveEffectApplyRemoveEventDispatcher;
+	ActiveEffectApplyRemoveEventEventHandler g_ActiveEffectApplyRemoveEventHandler;
+
+	EventResult ActiveEffectApplyRemoveEventEventHandler::ReceiveEvent(TESActiveEffectApplyRemoveEvent* evn, EventDispatcher<TESActiveEffectApplyRemoveEvent>* dispatcher)
+	{
+		if (evn->caster == (*g_thePlayer)) {
+			if (evn->target == (*g_thePlayer)) {
+				_MESSAGE("Caster and Target was player");
+
+				TESForm* sourceForm = LookupFormByID(evn->unk10);
+				if (sourceForm != nullptr) {
+					_MESSAGE("Source cast good %d", sourceForm->formType);
+					auto * effect = DYNAMIC_CAST(sourceForm, TESForm, ActiveEffect);
+					if (effect != nullptr) {
+						_MESSAGE("ActiveEffect cast good");
+						auto* magicItem = effect->item;
+						if (magicItem != nullptr) {
+							_MESSAGE("Magic item exists ");
+							auto* spellItem = DYNAMIC_CAST(magicItem, MagicItem, SpellItem);
+							if (spellItem != nullptr) {
+								_MESSAGE("Detected %s", spellItem->GetFullName());
+								std::thread t1(CheckAndPlayMagicArmorSpellEffect, spellItem);
+								t1.detach();
+							}
+						}
+					}
+					
+				}
+				//std::thread t15(CheckAndPlayMagicArmorSpellEffect, spell);
+				//t15.detach();
+
+
+				sourceForm = LookupFormByID(evn->unk12);
+				if (sourceForm != nullptr) {
+					_MESSAGE("Source cast good %d", sourceForm->formType);
+					auto* effect = DYNAMIC_CAST(sourceForm, TESForm, ActiveEffect);
+					if (effect != nullptr) {
+						_MESSAGE("ActiveEffect cast good");
+						auto* magicItem = effect->item;
+						if (magicItem != nullptr) {
+							_MESSAGE("Magic item exists ");
+							auto* spellItem = DYNAMIC_CAST(magicItem, MagicItem, SpellItem);
+							if (spellItem != nullptr) {
+								_MESSAGE("Detected %s", spellItem->GetFullName());
+								std::thread t1(CheckAndPlayMagicArmorSpellEffect, spellItem);
+								t1.detach();
+							}
+						}
+					}
+
+				}
+			}
+		}
+
+		//Actor* actor = DYNAMIC_CAST(evn->caster, TESObjectREFR, Actor);
+		return EventResult::kEvent_Continue;
+	}
+
 	
 	/*void HealEffectWithMenuWait()
 	{
@@ -4753,7 +4810,7 @@ namespace TactsuitVR
 
 		while (((rightSpell && rightMagic.load()) || (!rightSpell && leftMagic.load())) && PlayerHasMagicka())
 		{
-			ProvideHapticFeedback(randomGenerator(0, 359), 0, FeedbackType::MagicRestoration, intensityMultiplierMagic, false);
+			ProvideHapticFeedback(randomGenerator(0, 359), 0, FeedbackType::MagicRestoration, intensityMultiplierMagic, true);
 
 			Sleep(2000);
 		}
@@ -4871,7 +4928,7 @@ namespace TactsuitVR
 
 				if (feedback != NoFeedback)
 				{
-					ProvideHapticFeedback(0, 0, feedback, intensity, false, true);
+					ProvideHapticFeedback(0, 0, feedback, intensity, true, true);
 					if (!once)
 					{
 						Sleep(heal ? 1000 : 500);
@@ -4880,7 +4937,7 @@ namespace TactsuitVR
 						{
 							if (referenceEffect != nullptr && referenceEffect->finished == false)
 							{
-								ProvideHapticFeedback(0, 0, feedback, intensity, heal ? false : true, true);
+								ProvideHapticFeedback(0, 0, feedback, intensity, true, true);
 
 								Sleep(heal ? 1000 : 500);
 							}
@@ -5180,7 +5237,7 @@ namespace TactsuitVR
 	{
 		LOG("HIGGS hand collide effect on %s hand %g mass with %g velocity", isLeft ? "left" : "right", mass, separatingVelocity);
 
-		ProvideHapticFeedback(0, 0, isLeft ? PlayerEnvironmentHitLeft : PlayerEnvironmentHitRight, intensityMultiplierPlayerEnvironmentHit * (mass * (separatingVelocity / 5000.0f) / 4));
+		ProvideHapticFeedback(0, 0, isLeft ? PlayerEnvironmentHitLeft : PlayerEnvironmentHitRight, intensityMultiplierPlayerEnvironmentHit * (mass * (separatingVelocity / 5000.0f) / 4), true);
 	}
 
 	void higgsconsume(bool isLeft, TESForm* consumedForm)

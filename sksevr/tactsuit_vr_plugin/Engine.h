@@ -95,6 +95,14 @@ namespace TactsuitVR {
 	extern EventDispatcher<TESContainerChangedEvent>* g_ContainerChangedEventDispatcher;
 	extern ContainerChangedEventHandler g_ContainerChangedEventHandler;
 
+	class ActiveEffectApplyRemoveEventEventHandler : public BSTEventSink <TESActiveEffectApplyRemoveEvent>
+	{
+	public:
+		virtual	EventResult ReceiveEvent(TESActiveEffectApplyRemoveEvent* evn, EventDispatcher<TESActiveEffectApplyRemoveEvent>* dispatcher);
+	};
+
+	extern EventDispatcher<TESActiveEffectApplyRemoveEvent>* g_ActiveEffectApplyRemoveEventDispatcher;
+	extern ActiveEffectApplyRemoveEventEventHandler g_ActiveEffectApplyRemoveEventHandler;
 	
 	class TESEquipEventHandler : public BSTEventSink <TESEquipEvent>
 	{

@@ -598,6 +598,14 @@ public:
 	virtual	EventResult ReceiveEvent(TESMoveAttachDetachEvent * evn, EventDispatcher<TESMoveAttachDetachEvent> * dispatcher) = 0;
 };
 
+template <>
+class BSTEventSink <TESActiveEffectApplyRemoveEvent>
+{
+public:
+	virtual ~BSTEventSink() {}	// todo 
+	virtual	EventResult ReceiveEvent(TESActiveEffectApplyRemoveEvent* evn, EventDispatcher<TESActiveEffectApplyRemoveEvent> * dispatcher) = 0;
+};
+
 class EventDispatcherList
 {
 public:

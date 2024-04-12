@@ -279,7 +279,7 @@ namespace TactsuitVR {
 	void sendSensation(float locationAngle, float locationHeight, sharedPtr<BakedSensation> sensation) {
 		//_MESSAGE("sendSensation");
 		if (owo->State() != ConnectionState::Connected) {
-			_MESSAGE("WARN: Not connected. Skipping.");
+			_MESSAGE("WARN: Not connected. Skipping %s.", sensation->name.c_str());
 			return;
 		}
 
@@ -720,10 +720,10 @@ namespace TactsuitVR {
 		feedbackMap[FeedbackType::ConsumableDrink] = Feedback(FeedbackType::ConsumableDrink, "ConsumableDrink_");
 		feedbackMap[FeedbackType::ConsumableFood] = Feedback(FeedbackType::ConsumableFood, "ConsumableFood_");
 
-		feedbackMap[FeedbackType::ShoutFire] = Feedback(FeedbackType::ShoutFire, "ShoutFire_");
-		feedbackMap[FeedbackType::ShoutFrost] = Feedback(FeedbackType::ShoutFrost, "ShoutFrost_");
-		feedbackMap[FeedbackType::ShoutSteam] = Feedback(FeedbackType::ShoutSteam, "ShoutSteam_");
-		feedbackMap[FeedbackType::ShoutLightning] = Feedback(FeedbackType::ShoutLightning, "ShoutLightning_");
+		feedbackMap[FeedbackType::ShoutFire] = Feedback(FeedbackType::ShoutFire, "ShoutFire_", 100);
+		feedbackMap[FeedbackType::ShoutFrost] = Feedback(FeedbackType::ShoutFrost, "ShoutFrost_", 100);
+		feedbackMap[FeedbackType::ShoutSteam] = Feedback(FeedbackType::ShoutSteam, "ShoutSteam_", 100);
+		feedbackMap[FeedbackType::ShoutLightning] = Feedback(FeedbackType::ShoutLightning, "ShoutLightning_", 100);
 		feedbackMap[FeedbackType::HiggsPullLeft] = Feedback(FeedbackType::HiggsPullLeft, "HiggsPullLeft_");
 		feedbackMap[FeedbackType::HiggsPullRight] = Feedback(FeedbackType::HiggsPullRight, "HiggsPullRight_");
 		feedbackMap[FeedbackType::PlayerEnvironmentHitLeft] = Feedback(FeedbackType::PlayerEnvironmentHitLeft, "PlayerEnvironmentHitLeft_", 0);
