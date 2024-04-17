@@ -760,14 +760,14 @@ namespace TactsuitVR {
 		feedbackMap[FeedbackType::UnholsterArrowRightShoulder] = Feedback(FeedbackType::UnholsterArrowRightShoulder, "UnholsterArrowRightShoulder_");
 
 
-		feedbackMap[FeedbackType::Explosion] = Feedback(FeedbackType::Explosion, "Explosion_");
+		feedbackMap[FeedbackType::Explosion] = Feedback(FeedbackType::Explosion, "Explosion_", 30);
 		feedbackMap[FeedbackType::EnvironmentalPoison] = Feedback(FeedbackType::EnvironmentalPoison, "EnvironmentalPoison_");
 		feedbackMap[FeedbackType::EnvironmentalFire] = Feedback(FeedbackType::EnvironmentalFire, "EnvironmentalFire_");
 		feedbackMap[FeedbackType::EnvironmentalElectric] = Feedback(FeedbackType::EnvironmentalElectric, "EnvironmentalElectric_");
 		feedbackMap[FeedbackType::EnvironmentalFrost] = Feedback(FeedbackType::EnvironmentalFrost, "EnvironmentalFrost_");
-		feedbackMap[FeedbackType::EnvironmentalFireCloak] = Feedback(FeedbackType::EnvironmentalFireCloak, "EnvironmentalFireCloak_");
-		feedbackMap[FeedbackType::EnvironmentalElectricCloak] = Feedback(FeedbackType::EnvironmentalElectricCloak, "EnvironmentalElectricCloak_");
-		feedbackMap[FeedbackType::EnvironmentalFrostCloak] = Feedback(FeedbackType::EnvironmentalFrostCloak, "EnvironmentalFrostCloak_");
+		feedbackMap[FeedbackType::EnvironmentalFireCloak] = Feedback(FeedbackType::EnvironmentalFireCloak, "EnvironmentalFireCloak_", 0);
+		feedbackMap[FeedbackType::EnvironmentalElectricCloak] = Feedback(FeedbackType::EnvironmentalElectricCloak, "EnvironmentalElectricCloak_", 0);
+		feedbackMap[FeedbackType::EnvironmentalFrostCloak] = Feedback(FeedbackType::EnvironmentalFrostCloak, "EnvironmentalFrostCloak_", 0);
 
 		feedbackMap[FeedbackType::UnarmedDefault] = Feedback(FeedbackType::UnarmedDefault, "UnarmedDefault_", 20);
 		feedbackMap[FeedbackType::UnarmedDragon] = Feedback(FeedbackType::UnarmedDragon, "UnarmedDragon_", 20);

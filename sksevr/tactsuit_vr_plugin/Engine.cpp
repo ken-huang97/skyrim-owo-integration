@@ -702,7 +702,7 @@ namespace TactsuitVR
 	void SpellCastingEventDecider(bool fireAndForget, bool dual, bool leftHand)
 	{
 		auto player = DYNAMIC_CAST(LookupFormByID(0x14), TESForm, Actor);
-		_MESSAGE("Spell casting event decider");
+		//_MESSAGE("Spell casting event decider");
 
 		if (player != nullptr)
 		{
@@ -4118,7 +4118,7 @@ namespace TactsuitVR
 		if(isMagicArmor)
 		{
 			//Play magicArmor effect
-			ProvideHapticFeedback(0, 0, FeedbackType::MagicArmorSpell, intensityMultiplierMagicArmorSpell);
+			ProvideHapticFeedback(0, 0, FeedbackType::MagicArmorSpell, intensityMultiplierMagicArmorSpell, true);
 		}
 	}
 
@@ -4128,7 +4128,7 @@ namespace TactsuitVR
 			LOG("You are missing skyrimvrtools.dll!!!!!!!!");
 
 		vr::TrackedDeviceIndex_t controller;
-		_MESSAGE("Release burst %s", dual ? "dual" : (leftHand ? "left" : "right"));
+		// _MESSAGE("Release burst %s", dual ? "dual" : (leftHand ? "left" : "right"));
 
 		std::vector<unsigned short>* magicArray;
 		auto player = DYNAMIC_CAST(LookupFormByID(0x14), TESForm, Actor);
@@ -4341,56 +4341,7 @@ namespace TactsuitVR
 
 	EventResult ActiveEffectApplyRemoveEventEventHandler::ReceiveEvent(TESActiveEffectApplyRemoveEvent* evn, EventDispatcher<TESActiveEffectApplyRemoveEvent>* dispatcher)
 	{
-		if (evn->caster == (*g_thePlayer)) {
-			if (evn->target == (*g_thePlayer)) {
-				_MESSAGE("Caster and Target was player");
 
-				TESForm* sourceForm = LookupFormByID(evn->unk10);
-				if (sourceForm != nullptr) {
-					_MESSAGE("Source cast good %d", sourceForm->formType);
-					auto * effect = DYNAMIC_CAST(sourceForm, TESForm, ActiveEffect);
-					if (effect != nullptr) {
-						_MESSAGE("ActiveEffect cast good");
-						auto* magicItem = effect->item;
-						if (magicItem != nullptr) {
-							_MESSAGE("Magic item exists ");
-							auto* spellItem = DYNAMIC_CAST(magicItem, MagicItem, SpellItem);
-							if (spellItem != nullptr) {
-								_MESSAGE("Detected %s", spellItem->GetFullName());
-								std::thread t1(CheckAndPlayMagicArmorSpellEffect, spellItem);
-								t1.detach();
-							}
-						}
-					}
-					
-				}
-				//std::thread t15(CheckAndPlayMagicArmorSpellEffect, spell);
-				//t15.detach();
-
-
-				sourceForm = LookupFormByID(evn->unk12);
-				if (sourceForm != nullptr) {
-					_MESSAGE("Source cast good %d", sourceForm->formType);
-					auto* effect = DYNAMIC_CAST(sourceForm, TESForm, ActiveEffect);
-					if (effect != nullptr) {
-						_MESSAGE("ActiveEffect cast good");
-						auto* magicItem = effect->item;
-						if (magicItem != nullptr) {
-							_MESSAGE("Magic item exists ");
-							auto* spellItem = DYNAMIC_CAST(magicItem, MagicItem, SpellItem);
-							if (spellItem != nullptr) {
-								_MESSAGE("Detected %s", spellItem->GetFullName());
-								std::thread t1(CheckAndPlayMagicArmorSpellEffect, spellItem);
-								t1.detach();
-							}
-						}
-					}
-
-				}
-			}
-		}
-
-		//Actor* actor = DYNAMIC_CAST(evn->caster, TESObjectREFR, Actor);
 		return EventResult::kEvent_Continue;
 	}
 
@@ -4833,10 +4784,11 @@ namespace TactsuitVR
 				bool once = false;
 				bool heal = false;
 
+				//_MESSAGE("Processing Visual Effect: %s", model.c_str());
 				if (!ContainsNoCase(model, "po3") && !ContainsNoCase(model, "vibrant") && !ContainsNoCase(model, "conduit") && !ContainsNoCase(model, "cste_") && !ContainsNoCase(model, "weapon") && !ContainsNoCase(model, "axe") && !ContainsNoCase(model, "sword") && !ContainsNoCase(model, "dagger") && !ContainsNoCase(model, "mace"))
 				{
 					//Play appropriate haptic effects
-					//_MESSAGE("Processing Visual Effect: %s", model.c_str());
+					
 					if (Contains(model, "dlc1snowelftelekinesishandl"))
 					{
 						feedback = leftHandedMode ? FeedbackType::PlayerSpellWardRight : FeedbackType::PlayerSpellWardLeft;
@@ -4919,11 +4871,11 @@ namespace TactsuitVR
 						feedback = FeedbackType::EnvironmentalPoison;
 						intensity = intensityMultiplierEnvironmentalPoison;
 					}
-					/*else if (Contains(model, "greybeardpowerabsorb"))
+					else if (Contains(model, "shieldspellbody"))
 					{
-						feedback = FeedbackType::DragonSoul;
-						intensity = intensityMultiplierDragonSoul;
-					}*/
+						feedback = FeedbackType::MagicArmorSpell;
+						intensity = intensityMultiplierMagicArmorSpell;
+					}
 				}
 
 				if (feedback != NoFeedback)
@@ -5101,7 +5053,7 @@ namespace TactsuitVR
 											{
 												std::thread t3(ProcessVisualEffects, refEffect, modelRef->artObject);
 												t3.detach();
-												LOG("ON PLAYER: Currently active magic effectId: %x ArtObjectFormID: %x Model: %s - TargetRef:%x AimAtTargetRef:%x PlayerHandle:%x", processMan->referenceEffects.entries[i]->effectID, modelRef->artObject->formID, modelRef->artObject->texSwap.GetModelName(), refEffect->targetRefHandle, refEffect->aimAtTargetRefHandle, playerHandle);												
+												//_MESSAGE("ON PLAYER: Currently active magic effectId: %x ArtObjectFormID: %x Model: %s - TargetRef:%x AimAtTargetRef:%x PlayerHandle:%x", processMan->referenceEffects.entries[i]->effectID, modelRef->artObject->formID, modelRef->artObject->texSwap.GetModelName(), refEffect->targetRefHandle, refEffect->aimAtTargetRefHandle, playerHandle);												
 											}
 											else
 											{
@@ -5109,7 +5061,7 @@ namespace TactsuitVR
 												{
 													std::thread t3(ProcessVisualEffects, refEffect, modelRef->artObject);
 													t3.detach();
-													LOG("Environment: currently active magic effectId: %x ArtObjectFormID: %x Model: %s - TargetRef:%x AimAtTargetRef:%x", processMan->referenceEffects.entries[i]->effectID, modelRef->artObject->formID, modelRef->artObject->texSwap.GetModelName(), refEffect->targetRefHandle, refEffect->aimAtTargetRefHandle);
+													//_MESSAGE("Environment: currently active magic effectId: %x ArtObjectFormID: %x Model: %s - TargetRef:%x AimAtTargetRef:%x", processMan->referenceEffects.entries[i]->effectID, modelRef->artObject->formID, modelRef->artObject->texSwap.GetModelName(), refEffect->targetRefHandle, refEffect->aimAtTargetRefHandle);
 												}
 											}
 											viewedEffectsList.insert(processMan->referenceEffects.entries[i]->effectID);
