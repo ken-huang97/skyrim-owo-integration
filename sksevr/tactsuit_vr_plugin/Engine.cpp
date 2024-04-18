@@ -5444,8 +5444,8 @@ namespace TactsuitVR
 
 			//bool leftSleeveActive = IsDevicePlaying(bhaptics::PositionType::ForearmL) || IsDevicePlaying(bhaptics::PositionType::Left);
 			//bool rightSleeveActive = IsDevicePlaying(bhaptics::PositionType::ForearmR) || IsDevicePlaying(bhaptics::PositionType::Right);
-			bool leftSleeveActive = false;
-			bool rightSleeveActive = false;
+			bool leftSleeveActive = true;
+			bool rightSleeveActive = true;
 
 			if (hitLocation == Head)
 			{
