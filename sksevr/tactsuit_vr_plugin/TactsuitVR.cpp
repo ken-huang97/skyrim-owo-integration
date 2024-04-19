@@ -628,39 +628,39 @@ namespace TactsuitVR {
 
 	void FillFeedbackList()
 	{
-		feedbackMap.clear();
-		feedbackMap[FeedbackType::MeleeSwordRight] = Feedback(FeedbackType::MeleeSwordRight, "MeleeSwordRight_");
-		feedbackMap[FeedbackType::MeleeAxeRight] = Feedback(FeedbackType::MeleeAxeRight, "MeleeAxeRight_");
-		feedbackMap[FeedbackType::MeleeMaceRight] = Feedback(FeedbackType::MeleeMaceRight, "MeleeMaceRight_");
-		feedbackMap[FeedbackType::MeleeDaggerRight] = Feedback(FeedbackType::MeleeDaggerRight, "MeleeDaggerRight_");
-		feedbackMap[FeedbackType::Melee2HAxeRight] = Feedback(FeedbackType::Melee2HAxeRight, "Melee2HAxeRight_");
-		feedbackMap[FeedbackType::Melee2HSwordRight] = Feedback(FeedbackType::Melee2HSwordRight, "Melee2HSwordRight_");
-		feedbackMap[FeedbackType::MeleeSwordLeft] = Feedback(FeedbackType::MeleeSwordLeft, "MeleeSwordLeft_");
-		feedbackMap[FeedbackType::MeleeAxeLeft] = Feedback(FeedbackType::MeleeAxeLeft, "MeleeAxeLeft_");
-		feedbackMap[FeedbackType::MeleeMaceLeft] = Feedback(FeedbackType::MeleeMaceLeft, "MeleeMaceLeft_");
-		feedbackMap[FeedbackType::MeleeDaggerLeft] = Feedback(FeedbackType::MeleeDaggerLeft, "MeleeDaggerLeft_");
-		feedbackMap[FeedbackType::Melee2HAxeLeft] = Feedback(FeedbackType::Melee2HAxeLeft, "Melee2HAxeLeft_");
-		feedbackMap[FeedbackType::Melee2HSwordLeft] = Feedback(FeedbackType::Melee2HSwordLeft, "Melee2HSwordLeft_");
-		feedbackMap[FeedbackType::MeleeFist] = Feedback(FeedbackType::MeleeFist, "MeleeFist_");
-		feedbackMap[FeedbackType::MeleeBash] = Feedback(FeedbackType::MeleeBash, "MeleeBash_");
-		feedbackMap[FeedbackType::MeleePowerAttack] = Feedback(FeedbackType::MeleePowerAttack, "MeleePowerAttack_");
-		feedbackMap[FeedbackType::Ranged] = Feedback(FeedbackType::Ranged, "Ranged_");
-		feedbackMap[FeedbackType::MagicFire] = Feedback(FeedbackType::MagicFire, "MagicFire_", 10);
-		feedbackMap[FeedbackType::MagicShock] = Feedback(FeedbackType::MagicShock, "MagicShock_", 10);
-		feedbackMap[FeedbackType::MagicIce] = Feedback(FeedbackType::MagicIce, "MagicIce_", 10);
-		feedbackMap[FeedbackType::MagicAlteration] = Feedback(FeedbackType::MagicAlteration, "MagicAlteration_", 10);
-		feedbackMap[FeedbackType::MagicIllusion] = Feedback(FeedbackType::MagicIllusion, "MagicIllusion_", 10);
-		feedbackMap[FeedbackType::MagicRestoration] = Feedback(FeedbackType::MagicRestoration, "MagicRestoration_", 10);
-		feedbackMap[FeedbackType::MagicPoison] = Feedback(FeedbackType::MagicPoison, "MagicPoison_", 10);
-		feedbackMap[FeedbackType::MagicOther] = Feedback(FeedbackType::MagicOther, "MagicOther_", 10);
-		feedbackMap[FeedbackType::MagicContinuousFire] = Feedback(FeedbackType::MagicContinuousFire, "MagicContinuousFire_", 10);
-		feedbackMap[FeedbackType::MagicContinuousShock] = Feedback(FeedbackType::MagicContinuousShock, "MagicContinuousShock_", 10);
-		feedbackMap[FeedbackType::MagicContinuousIce] = Feedback(FeedbackType::MagicContinuousIce, "MagicContinuousIce_", 10);
-		feedbackMap[FeedbackType::MagicContinuousAlteration] = Feedback(FeedbackType::MagicContinuousAlteration, "MagicContinuousAlteration_", 10);
-		feedbackMap[FeedbackType::MagicContinuousIllusion] = Feedback(FeedbackType::MagicContinuousIllusion, "MagicContinuousIllusion_", 10);
-		feedbackMap[FeedbackType::MagicContinuousRestoration] = Feedback(FeedbackType::MagicContinuousRestoration, "MagicContinuousRestoration_", 10);
-		feedbackMap[FeedbackType::MagicContinuousOther] = Feedback(FeedbackType::MagicContinuousOther, "MagicContinuousOther_", 10);
-		feedbackMap[FeedbackType::MagicContinuousPoison] = Feedback(FeedbackType::MagicContinuousPoison, "MagicContinuousPoison_", 10);
+		feedbackMap.clear();		
+		feedbackMap[FeedbackType::MeleeSwordRight] = Feedback(FeedbackType::MeleeSwordRight, "MeleeSwordRight_", 20);
+		feedbackMap[FeedbackType::MeleeAxeRight] = Feedback(FeedbackType::MeleeAxeRight, "MeleeAxeRight_", 20);
+		feedbackMap[FeedbackType::MeleeMaceRight] = Feedback(FeedbackType::MeleeMaceRight, "MeleeMaceRight_", 20);
+		feedbackMap[FeedbackType::MeleeDaggerRight] = Feedback(FeedbackType::MeleeDaggerRight, "MeleeDaggerRight_", 20);
+		feedbackMap[FeedbackType::Melee2HAxeRight] = Feedback(FeedbackType::Melee2HAxeRight, "Melee2HAxeRight_", 20);
+		feedbackMap[FeedbackType::Melee2HSwordRight] = Feedback(FeedbackType::Melee2HSwordRight, "Melee2HSwordRight_", 20);
+		feedbackMap[FeedbackType::MeleeSwordLeft] = Feedback(FeedbackType::MeleeSwordLeft, "MeleeSwordLeft_", 20);
+		feedbackMap[FeedbackType::MeleeAxeLeft] = Feedback(FeedbackType::MeleeAxeLeft, "MeleeAxeLeft_", 20);
+		feedbackMap[FeedbackType::MeleeMaceLeft] = Feedback(FeedbackType::MeleeMaceLeft, "MeleeMaceLeft_", 20);
+		feedbackMap[FeedbackType::MeleeDaggerLeft] = Feedback(FeedbackType::MeleeDaggerLeft, "MeleeDaggerLeft_", 20);
+		feedbackMap[FeedbackType::Melee2HAxeLeft] = Feedback(FeedbackType::Melee2HAxeLeft, "Melee2HAxeLeft_", 20);
+		feedbackMap[FeedbackType::Melee2HSwordLeft] = Feedback(FeedbackType::Melee2HSwordLeft, "Melee2HSwordLeft_", 20);
+		feedbackMap[FeedbackType::MeleeFist] = Feedback(FeedbackType::MeleeFist, "MeleeFist_", 20);
+		feedbackMap[FeedbackType::MeleeBash] = Feedback(FeedbackType::MeleeBash, "MeleeBash_", 20);
+		feedbackMap[FeedbackType::MeleePowerAttack] = Feedback(FeedbackType::MeleePowerAttack, "MeleePowerAttack_", 20);
+		feedbackMap[FeedbackType::Ranged] = Feedback(FeedbackType::Ranged, "Ranged_", 20);
+		feedbackMap[FeedbackType::MagicFire] = Feedback(FeedbackType::MagicFire, "MagicFire_", 20);
+		feedbackMap[FeedbackType::MagicShock] = Feedback(FeedbackType::MagicShock, "MagicShock_", 20);
+		feedbackMap[FeedbackType::MagicIce] = Feedback(FeedbackType::MagicIce, "MagicIce_", 20);
+		feedbackMap[FeedbackType::MagicAlteration] = Feedback(FeedbackType::MagicAlteration, "MagicAlteration_", 20);
+		feedbackMap[FeedbackType::MagicIllusion] = Feedback(FeedbackType::MagicIllusion, "MagicIllusion_", 20);
+		feedbackMap[FeedbackType::MagicRestoration] = Feedback(FeedbackType::MagicRestoration, "MagicRestoration_", 20);
+		feedbackMap[FeedbackType::MagicPoison] = Feedback(FeedbackType::MagicPoison, "MagicPoison_", 20);
+		feedbackMap[FeedbackType::MagicOther] = Feedback(FeedbackType::MagicOther, "MagicOther_", 20);
+		feedbackMap[FeedbackType::MagicContinuousFire] = Feedback(FeedbackType::MagicContinuousFire, "MagicContinuousFire_", 20);
+		feedbackMap[FeedbackType::MagicContinuousShock] = Feedback(FeedbackType::MagicContinuousShock, "MagicContinuousShock_", 20);
+		feedbackMap[FeedbackType::MagicContinuousIce] = Feedback(FeedbackType::MagicContinuousIce, "MagicContinuousIce_", 20);
+		feedbackMap[FeedbackType::MagicContinuousAlteration] = Feedback(FeedbackType::MagicContinuousAlteration, "MagicContinuousAlteration_", 20);
+		feedbackMap[FeedbackType::MagicContinuousIllusion] = Feedback(FeedbackType::MagicContinuousIllusion, "MagicContinuousIllusion_", 20);
+		feedbackMap[FeedbackType::MagicContinuousRestoration] = Feedback(FeedbackType::MagicContinuousRestoration, "MagicContinuousRestoration_", 20);
+		feedbackMap[FeedbackType::MagicContinuousOther] = Feedback(FeedbackType::MagicContinuousOther, "MagicContinuousOther_", 20);
+		feedbackMap[FeedbackType::MagicContinuousPoison] = Feedback(FeedbackType::MagicContinuousPoison, "MagicContinuousPoison_", 20);
 		feedbackMap[FeedbackType::Shout] = Feedback(FeedbackType::Shout, "Shout_", 100);
 		feedbackMap[FeedbackType::HeartBeat] = Feedback(FeedbackType::HeartBeat, "HeartBeat_");
 		feedbackMap[FeedbackType::HeartBeatFast] = Feedback(FeedbackType::HeartBeatFast, "HeartBeatFast_");
@@ -761,10 +761,10 @@ namespace TactsuitVR {
 
 
 		feedbackMap[FeedbackType::Explosion] = Feedback(FeedbackType::Explosion, "Explosion_", 30);
-		feedbackMap[FeedbackType::EnvironmentalPoison] = Feedback(FeedbackType::EnvironmentalPoison, "EnvironmentalPoison_");
-		feedbackMap[FeedbackType::EnvironmentalFire] = Feedback(FeedbackType::EnvironmentalFire, "EnvironmentalFire_");
-		feedbackMap[FeedbackType::EnvironmentalElectric] = Feedback(FeedbackType::EnvironmentalElectric, "EnvironmentalElectric_");
-		feedbackMap[FeedbackType::EnvironmentalFrost] = Feedback(FeedbackType::EnvironmentalFrost, "EnvironmentalFrost_");
+		feedbackMap[FeedbackType::EnvironmentalPoison] = Feedback(FeedbackType::EnvironmentalPoison, "EnvironmentalPoison_", 20);
+		feedbackMap[FeedbackType::EnvironmentalFire] = Feedback(FeedbackType::EnvironmentalFire, "EnvironmentalFire_", 20);
+		feedbackMap[FeedbackType::EnvironmentalElectric] = Feedback(FeedbackType::EnvironmentalElectric, "EnvironmentalElectric_", 20);
+		feedbackMap[FeedbackType::EnvironmentalFrost] = Feedback(FeedbackType::EnvironmentalFrost, "EnvironmentalFrost_", 20);
 		feedbackMap[FeedbackType::EnvironmentalFireCloak] = Feedback(FeedbackType::EnvironmentalFireCloak, "EnvironmentalFireCloak_", 0);
 		feedbackMap[FeedbackType::EnvironmentalElectricCloak] = Feedback(FeedbackType::EnvironmentalElectricCloak, "EnvironmentalElectricCloak_", 0);
 		feedbackMap[FeedbackType::EnvironmentalFrostCloak] = Feedback(FeedbackType::EnvironmentalFrostCloak, "EnvironmentalFrostCloak_", 0);
@@ -821,20 +821,20 @@ namespace TactsuitVR {
 		feedbackMap[FeedbackType::MagicHeadIllusion] = Feedback(FeedbackType::MagicHeadIllusion, "MagicHeadIllusion_");
 		feedbackMap[FeedbackType::MagicHeadRestoration] = Feedback(FeedbackType::MagicHeadRestoration, "MagicHeadRestoration_");
 
-		feedbackMap[FeedbackType::RangedLeftArm] = Feedback(FeedbackType::RangedLeftArm, "RangedLeftArm_");
-		feedbackMap[FeedbackType::RangedRightArm] = Feedback(FeedbackType::RangedRightArm, "RangedRightArm_");
-		feedbackMap[FeedbackType::MagicLeftArmFire] = Feedback(FeedbackType::MagicLeftArmFire, "MagicLeftArmFire_");
-		feedbackMap[FeedbackType::MagicLeftArmShock] = Feedback(FeedbackType::MagicLeftArmShock, "MagicLeftArmShock_");
-		feedbackMap[FeedbackType::MagicLeftArmIce] = Feedback(FeedbackType::MagicLeftArmIce, "MagicLeftArmIce_");
-		feedbackMap[FeedbackType::MagicLeftArmAlteration] = Feedback(FeedbackType::MagicLeftArmAlteration, "MagicLeftArmAlteration_");
-		feedbackMap[FeedbackType::MagicLeftArmIllusion] = Feedback(FeedbackType::MagicLeftArmIllusion, "MagicLeftArmIllusion_");
-		feedbackMap[FeedbackType::MagicLeftArmRestoration] = Feedback(FeedbackType::MagicLeftArmRestoration, "MagicLeftArmRestoration_");
-		feedbackMap[FeedbackType::MagicRightArmFire] = Feedback(FeedbackType::MagicRightArmFire, "MagicRightArmFire_");
-		feedbackMap[FeedbackType::MagicRightArmShock] = Feedback(FeedbackType::MagicRightArmShock, "MagicRightArmShock_");
-		feedbackMap[FeedbackType::MagicRightArmIce] = Feedback(FeedbackType::MagicRightArmIce, "MagicRightArmIce_");
-		feedbackMap[FeedbackType::MagicRightArmAlteration] = Feedback(FeedbackType::MagicRightArmAlteration, "MagicRightArmAlteration_");
-		feedbackMap[FeedbackType::MagicRightArmIllusion] = Feedback(FeedbackType::MagicRightArmIllusion, "MagicRightArmIllusion_");
-		feedbackMap[FeedbackType::MagicRightArmRestoration] = Feedback(FeedbackType::MagicRightArmRestoration, "MagicRightArmRestoration_");
+		feedbackMap[FeedbackType::RangedLeftArm] = Feedback(FeedbackType::RangedLeftArm, "RangedLeftArm_", 20);
+		feedbackMap[FeedbackType::RangedRightArm] = Feedback(FeedbackType::RangedRightArm, "RangedRightArm_", 20);
+		feedbackMap[FeedbackType::MagicLeftArmFire] = Feedback(FeedbackType::MagicLeftArmFire, "MagicLeftArmFire_", 20);
+		feedbackMap[FeedbackType::MagicLeftArmShock] = Feedback(FeedbackType::MagicLeftArmShock, "MagicLeftArmShock_", 20);
+		feedbackMap[FeedbackType::MagicLeftArmIce] = Feedback(FeedbackType::MagicLeftArmIce, "MagicLeftArmIce_", 20);
+		feedbackMap[FeedbackType::MagicLeftArmAlteration] = Feedback(FeedbackType::MagicLeftArmAlteration, "MagicLeftArmAlteration_", 20);
+		feedbackMap[FeedbackType::MagicLeftArmIllusion] = Feedback(FeedbackType::MagicLeftArmIllusion, "MagicLeftArmIllusion_", 20);
+		feedbackMap[FeedbackType::MagicLeftArmRestoration] = Feedback(FeedbackType::MagicLeftArmRestoration, "MagicLeftArmRestoration_", 20);
+		feedbackMap[FeedbackType::MagicRightArmFire] = Feedback(FeedbackType::MagicRightArmFire, "MagicRightArmFire_", 20);
+		feedbackMap[FeedbackType::MagicRightArmShock] = Feedback(FeedbackType::MagicRightArmShock, "MagicRightArmShock_", 20);
+		feedbackMap[FeedbackType::MagicRightArmIce] = Feedback(FeedbackType::MagicRightArmIce, "MagicRightArmIce_", 20);
+		feedbackMap[FeedbackType::MagicRightArmAlteration] = Feedback(FeedbackType::MagicRightArmAlteration, "MagicRightArmAlteration_", 20);
+		feedbackMap[FeedbackType::MagicRightArmIllusion] = Feedback(FeedbackType::MagicRightArmIllusion, "MagicRightArmIllusion_", 20);
+		feedbackMap[FeedbackType::MagicRightArmRestoration] = Feedback(FeedbackType::MagicRightArmRestoration, "MagicRightArmRestoration_", 20);
 
 		feedbackMap[FeedbackType::HorseRiding] = Feedback(FeedbackType::HorseRiding, "HorseRiding_", 0);
 		feedbackMap[FeedbackType::HorseRidingSlow] = Feedback(FeedbackType::HorseRidingSlow, "HorseRidingSlow_", 0);
@@ -842,9 +842,9 @@ namespace TactsuitVR {
 		feedbackMap[FeedbackType::TentacleAttack] = Feedback(FeedbackType::TentacleAttack, "TentacleAttack_");
 
 
-		feedbackMap[FeedbackType::GiantStomp] = Feedback(FeedbackType::GiantStomp, "GiantStomp_");
-		feedbackMap[FeedbackType::GiantClubLeft] = Feedback(FeedbackType::GiantClubLeft, "GiantClubLeft_");
-		feedbackMap[FeedbackType::GiantClubRight] = Feedback(FeedbackType::GiantClubRight, "GiantClubRight_");
+		feedbackMap[FeedbackType::GiantStomp] = Feedback(FeedbackType::GiantStomp, "GiantStomp_", 20);
+		feedbackMap[FeedbackType::GiantClubLeft] = Feedback(FeedbackType::GiantClubLeft, "GiantClubLeft_", 20);
+		feedbackMap[FeedbackType::GiantClubRight] = Feedback(FeedbackType::GiantClubRight, "GiantClubRight_", 20);
 
 		feedbackMap[FeedbackType::FallEffect] = Feedback(FeedbackType::FallEffect, "FallEffect_");
 
@@ -864,7 +864,7 @@ namespace TactsuitVR {
 
 		feedbackMap[FeedbackType::Wind] = Feedback(FeedbackType::Wind, "Wind_", 0);
 
-		feedbackMap[FeedbackType::MagicArmorSpell] = Feedback(FeedbackType::MagicArmorSpell, "MagicArmorSpell_", 10);
+		feedbackMap[FeedbackType::MagicArmorSpell] = Feedback(FeedbackType::MagicArmorSpell, "MagicArmorSpell_", 20);
 
 
 		feedbackMap[FeedbackType::SpellWheelOpenLeft] = Feedback(FeedbackType::SpellWheelOpenLeft, "SpellWheelOpenLeft_");

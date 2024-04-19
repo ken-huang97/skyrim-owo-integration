@@ -2340,19 +2340,19 @@ namespace TactsuitVR
 								if (evn->flags & evn->kFlag_PowerAttack) //If power attack
 								{
 									LOG("power attack vibration on right arm");
-									ProvideHapticFeedback(0, 0, FeedbackType::PlayerPowerAttackRight, intensityMultiplierPlayerPowerAttack);
+									ProvideHapticFeedback(0, 0, FeedbackType::PlayerPowerAttackRight, intensityMultiplierPlayerPowerAttack, true);
 								}
 								else
 								{
 									if (evn->flags & evn->kFlag_Bash)
 									{
 										LOG("melee bash vibration on right arm");
-										ProvideHapticFeedback(0, 0, FeedbackType::PlayerBashRight, intensityMultiplierPlayerBash);
+										ProvideHapticFeedback(0, 0, FeedbackType::PlayerBashRight, intensityMultiplierPlayerBash, true);
 									}
 									else
 									{
 										LOG("melee vibration on right arm");
-										ProvideHapticFeedback(0, 0, FeedbackType::PlayerAttackRight, intensityMultiplierPlayerAttack);
+										ProvideHapticFeedback(0, 0, FeedbackType::PlayerAttackRight, intensityMultiplierPlayerAttack, true);
 									}
 								}
 								return EventResult::kEvent_Continue;
@@ -2372,19 +2372,19 @@ namespace TactsuitVR
 								if (evn->flags & evn->kFlag_PowerAttack) //If power attack
 								{
 									LOG("power attack vibration on left arm");
-									ProvideHapticFeedback(0, 0, FeedbackType::PlayerPowerAttackLeft, intensityMultiplierPlayerPowerAttack);
+									ProvideHapticFeedback(0, 0, FeedbackType::PlayerPowerAttackLeft, intensityMultiplierPlayerPowerAttack, true);
 								}
 								else
 								{
 									if (evn->flags & evn->kFlag_Bash)
 									{
 										LOG("melee bash vibration on left arm");
-										ProvideHapticFeedback(0, 0, FeedbackType::PlayerBashLeft, intensityMultiplierPlayerBash);
+										ProvideHapticFeedback(0, 0, FeedbackType::PlayerBashLeft, intensityMultiplierPlayerBash, true);
 									}
 									else
 									{
 										LOG("melee vibration on left arm");
-										ProvideHapticFeedback(0, 0, FeedbackType::PlayerAttackLeft, intensityMultiplierPlayerAttack);
+										ProvideHapticFeedback(0, 0, FeedbackType::PlayerAttackLeft, intensityMultiplierPlayerAttack, true);
 									}
 								}
 								return EventResult::kEvent_Continue;							
