@@ -17,6 +17,8 @@ namespace OWOGame
         MusclesGroup WithIntensity(int intensity);
         owoString ToString();
         operator owoVector<Muscle>() { return muscles; }
+        MusclesGroup Mirror();
+
 
         static MusclesGroup Front();
         static MusclesGroup Back();

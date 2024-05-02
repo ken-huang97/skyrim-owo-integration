@@ -14,6 +14,8 @@ namespace TactsuitVR {
 	bool owoLoopUpdating = false;
 	int owoUpdateWaitMs = 10;
 
+	const std::string gameId = "73718539";
+
 	float TOLERANCE = 0.00001f;
 
 	sharedPtr<OWO> owo;
@@ -43,8 +45,7 @@ namespace TactsuitVR {
 		if (!systemInitialized)
 		{
 			owoVector<owoString> bakedSensations = ReadSensationFiles();
-			// TODO: Add gameId when approved
-			auto auth = GameAuth::Create(bakedSensations);
+			auto auth = GameAuth::Create(bakedSensations, gameId);
 
 			startTime = std::clock();
 			owo = OWO::Create<UDPNetwork>();
@@ -100,7 +101,7 @@ namespace TactsuitVR {
 		if (feedbackMap.find(feedback.feedbackType) != feedbackMap.end())
 		{
 			feedbackMap[feedback.feedbackType].feedbackSensations.push_back(sensation);
-			_MESSAGE("Added sensation with duration %f to %s", sensation->TotalDuration(), feedbackTypeToString(feedback.feedbackType));
+			_MESSAGE("Added sensation with duration %f to %s", sensation->TotalDuration(), feedbackTypeToString(feedback.feedbackType).c_str());
 		}
 		else {
 			_MESSAGE("WARN: This should not have happened: No feedback in map exists for %s", filename.c_str());

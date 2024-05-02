@@ -16,6 +16,7 @@ namespace OWOGame
         owoString ToString();
 
         Muscle WithIntensity(int newIntensity);
+        Muscle Mirror();
 
         static Muscle Pectoral_R();
         static Muscle Pectoral_L();
