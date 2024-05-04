@@ -185,6 +185,11 @@ namespace TactsuitVR {
 
 	extern float intensityMultiplierMagicArmorSpell;
 
+	
+    extern float intensityMultiplierSoulTrap;
+    extern float lowhealthpercentage;
+    extern float verylowhealthpercentage;
+
 
 	void Log(const int msgLogLevel, const char* fmt, ...);
 	enum eLogLevels

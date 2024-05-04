@@ -591,8 +591,11 @@ namespace TactsuitVR {
 		 {FeedbackType::SwimVest100, "SwimVest100"},
 		 {FeedbackType::DrowningEffectVest, "DrowningEffectVest"},
 		 {FeedbackType::DrowningEffectHead, "DrowningEffectHead"},
-		 {FeedbackType::Wind, "Wind"},
+		 {FeedbackType::WindBack, "WindBack"},
+		 {FeedbackType::WindFront, "WindFront"},
+		 {FeedbackType::Rain, "Rain"},
 		 {FeedbackType::MagicArmorSpell, "MagicArmorSpell"},
+		 {FeedbackType::SoulTrapCaptured, "SoulTrapCaptured"},
 		 {FeedbackType::SpellWheelOpenRight, "SpellWheelOpenRight"},
 		 {FeedbackType::SpellWheelOpenLeft, "SpellWheelOpenLeft"},
 		 {FeedbackType::Default, "Default"},
@@ -863,9 +866,12 @@ namespace TactsuitVR {
 		feedbackMap[FeedbackType::PlayerCrossbowKickbackLeft] = Feedback(FeedbackType::PlayerCrossbowKickbackLeft, "PlayerCrossbowKickbackLeft_");
 		feedbackMap[FeedbackType::PlayerCrossbowKickbackRight] = Feedback(FeedbackType::PlayerCrossbowKickbackRight, "PlayerCrossbowKickbackRight_");
 
-		feedbackMap[FeedbackType::Wind] = Feedback(FeedbackType::Wind, "Wind_", 0);
+		feedbackMap[FeedbackType::WindBack] = Feedback(FeedbackType::WindBack, "WindBack_", 0);
+		feedbackMap[FeedbackType::WindFront] = Feedback(FeedbackType::WindFront, "WindFront_", 0);
+		feedbackMap[FeedbackType::Rain] = Feedback(FeedbackType::Rain, "Rain_", 0);
 
 		feedbackMap[FeedbackType::MagicArmorSpell] = Feedback(FeedbackType::MagicArmorSpell, "MagicArmorSpell_", 20);
+		feedbackMap[FeedbackType::SoulTrapCaptured] = Feedback(FeedbackType::SoulTrapCaptured, "SoulTrapCaptured_");
 
 
 		feedbackMap[FeedbackType::SpellWheelOpenLeft] = Feedback(FeedbackType::SpellWheelOpenLeft, "SpellWheelOpenLeft_");
@@ -916,7 +922,7 @@ namespace TactsuitVR {
 		// }
 	}
 
-	void ProvideDotFeedback(MusclesGroup muscle, int index, int intensity, int durationMillis)
+	void ProvideDotFeedbackProvideDotFeedback(MusclesGroup muscle, int index, int intensity, int durationMillis)
 	{
 		_MESSAGE("ProvideDotFeedback");
 		if (intensity < TOLERANCE)

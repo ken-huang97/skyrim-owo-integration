@@ -592,6 +592,9 @@ public:
 	DEFINE_MEMBER_FN(UpdateArmorAbility, void, 0x0063A230, TESForm*, BaseExtraList * extraData);
 	DEFINE_MEMBER_FN(IsHostileToActor, bool, 0x005F0560, Actor * actor);
 	DEFINE_MEMBER_FN(ResetAI, void, 0x005E3990, UInt32 unk1, UInt32 unk2);
+	DEFINE_MEMBER_FN(GetMount, bool, 0x00637A90, NiPointer<Actor>&outMount);
+	DEFINE_MEMBER_FN(GetMountedBy, bool, 0x00637BA0, NiPointer<Actor>&outRider);
+	DEFINE_MEMBER_FN(GetActorValuePercentage, float, 0x005DEB30, unsigned int actorValueId);
 
 	TESForm * GetEquippedObject(bool abLeftHand);
 	void UpdateSkinColor();

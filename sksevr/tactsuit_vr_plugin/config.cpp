@@ -46,6 +46,9 @@ namespace TactsuitVR {
 	float intensityMultiplierBite = 1.0f;
 	float intensityMultiplierDefault = 1.0f;
 
+	float lowhealthpercentage = 0.2f;
+	float verylowhealthpercentage = 0.1f;
+
 	float intensityMultiplierHeartBeatFast = 1.0f;
 	float intensityMultiplierHeartBeat = 1.0f;
 
@@ -174,6 +177,7 @@ namespace TactsuitVR {
 	float intensityMultiplierPlayerCrossbowKickback = 1.0f;
 
 	float intensityMultiplierMagicArmorSpell = 1.0f;
+	float intensityMultiplierSoulTrap = 1.0f;
 
 	std::vector<std::string> ignoredSpells;
 	std::vector<std::string> shortSpells;
@@ -272,6 +276,15 @@ namespace TactsuitVR {
 								{
 									WindEffectMinSpeed = variableValue;
 								}
+								
+								else if (variableName == "LowHealthPercentage")
+                                {
+									lowhealthpercentage = (float)(variableValue) /100.0f;
+								}
+								else if (variableName == "VeryLowHealthPercentage")
+								{
+									verylowhealthpercentage = (float)(variableValue) / 100.0f;
+                                }
 							}
 							else if (currentSetting == "[Intensity]")
 							{
@@ -462,6 +475,7 @@ namespace TactsuitVR {
 								if (variableName == "PlayerCrossbowFire") intensityMultiplierPlayerCrossbowFire = variableValue;								
 								else if (variableName == "PlayerCrossbowKickback") intensityMultiplierPlayerCrossbowKickback = variableValue;
 								else if (variableName == "MagicArmorSpell") intensityMultiplierMagicArmorSpell = variableValue;
+								else if (variableName == "SoulTrapEffect") intensityMultiplierSoulTrap = variableValue;
 								
 							}
 							else if (currentSetting == "[IgnoredSpells]")

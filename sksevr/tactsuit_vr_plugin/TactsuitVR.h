@@ -266,9 +266,12 @@ namespace TactsuitVR
 		DrowningEffectVest,
 		DrowningEffectHead,
 
-		Wind,
+		WindFront,
+		WindBack,
+		Rain,
 
 		MagicArmorSpell,
+		SoulTrapCaptured,
 
 		SpellWheelOpenLeft,
 		SpellWheelOpenRight,

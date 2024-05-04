@@ -30,6 +30,15 @@ namespace TactsuitVR
 	RelocAddr <sub240690> sub_240690(0x240690);
 	RelocAddr <_subAF4960> sub_AF4960(0xAF4960);
 	RelocAddr <_sub685270> sub_685270(0x685270);
+	
+
+    RelocAddr<_GetHavokWorldFromCell> GetHavokWorldFromCell(0x276A90);
+    RelocAddr<_GetNodeFromCollidable> GetNodeFromCollidable(0xE01FE0);
+    RelocAddr<_GetRefFromCollidable> GetRefFromCollidable(0x003B4940);
+
+    RelocPtr<float> g_havokWorldScale(0x15B78F4);
+
+    RelocAddr<_hkpWorld_CastRay> hkpWorld_CastRay(0x00AB5B20);
 
 	static uintptr_t g_moduleBase = 0;
 
@@ -107,6 +116,8 @@ namespace TactsuitVR
 	std::atomic<bool> leftMagic(false);
 
 	std::atomic<bool> raining(false);
+
+	std::atomic<bool> atomicPlayerUnderCoverage(false);
 
 	std::vector<UInt32> notExteriorWorlds = { 0x69857, 0x1EE62, 0x20DCB, 0x1FAE2, 0x34240, 0x50015, 0x2C965, 0x29AB7, 0x4F838, 0x3A9D6, 0x243DE, 0xC97EB, 0xC350D, 0x1CDD3, 0x1CDD9, 0x21EDB, 0x1E49D, 0x2B101, 0x2A9D8, 0x20BFE };
 
@@ -573,7 +584,7 @@ namespace TactsuitVR
 	}
 
 	typedef uint64_t(*TESObjectREFR_IAnimationGraphManagerHolder_NotifyAnimationGraph_VFunc)(uintptr_t* iagmh, BSFixedString* animName);
-	TESObjectREFR_IAnimationGraphManagerHolder_NotifyAnimationGraph_VFunc g_originalTESObjectREFR_NotifyAnimationGraph = nullptr; // Normally a JMP to 0x00501530
+	TESObjectREFR_IAnimationGraphManagerHolder_NotifyAnimationGraph_VFunc g_originalTESObjectREFR_NotifyAnimationGraph = nullptr;
 	static RelocPtr<TESObjectREFR_IAnimationGraphManagerHolder_NotifyAnimationGraph_VFunc> TESObjectREFR_IAnimationGraphManagerHolder_NotifyAnimationGraph_vtbl(0x015E1D50);
 	uint64_t Hooked_TESObjectREFR_IAnimationGraphManagerHolder_NotifyAnimationGraph(uintptr_t* iAnimationGraphManagerHolder, BSFixedString* animationName)
 	{
@@ -959,6 +970,11 @@ namespace TactsuitVR
 			else if (evn->formId == 0x242ba && (evn->stage == 282))
 			{
 				std::thread t15(CallEnvironmentRumble, 24, 5.0f, 400);
+				t15.detach();
+			}
+			else if (evn->formId == 0x10ec61 && (evn->stage == 10)) //Greybeards call
+			{
+				std::thread t15(CallEnvironmentRumble, 10, 1.0f, 500);
 				t15.detach();
 			}
 
@@ -2882,9 +2898,6 @@ namespace TactsuitVR
 		ProvideHapticFeedback(angleOffset, 0, FeedbackType::MagicRestoration, intensityMultiplierMagic);
 	}*/
 	
-	float lowhealthpercentage = 0.2f;
-	float verylowhealthpercentage = 0.1f;
-
 	float GetCurrentHealth()
 	{
 		return (*g_thePlayer)->actorValueOwner.GetCurrent(24);
@@ -2892,7 +2905,7 @@ namespace TactsuitVR
 
 	float GetMaxHealth()
 	{
-		return (*g_thePlayer)->actorValueOwner.GetMaximum(24);
+		return ceilf(GetCurrentHealth() / CALL_MEMBER_FN((*g_thePlayer), GetActorValuePercentage)(24));
 	}
 
 	void Heartbeat()
@@ -3084,6 +3097,182 @@ namespace TactsuitVR
 		}
 	}
 
+	void RayHitCollector::AddRayHit(const hkpCdBody& cdBody, const hkpWorldRayCastOutput& hitInfo)
+	{
+		m_closestHitInfo = hitInfo;
+		m_doesHitExist = true;
+		earlyOutHitFraction = hitInfo.hitFraction; // Only accept closer hits after this
+	}
+
+	RayHitCollector rayHitCollector;
+	hkpWorldRayCastInput rayCastInput;
+	inline hkVector4 NiPointToHkVector(const NiPoint3& pt) { return { pt.x, pt.y, pt.z, 0 }; };
+
+	bool IsPlayerUnderCoverage()
+	{
+		if ((*g_thePlayer) && (*g_thePlayer)->loadedState && (*g_thePlayer)->loadedState->node)
+		{
+			TESObjectCELL* cell = (*g_thePlayer)->parentCell;
+			if (cell)
+			{
+				bhkWorld* world = GetHavokWorldFromCell(cell);
+				if (world)
+				{
+					//LOG_ERR("world not null");
+					NiPoint3 rayStart = (*g_thePlayer)->loadedState->node->m_worldTransform.pos;
+					NiPoint3 rayEnd = rayStart;
+
+					constexpr auto height = 2000.0f;
+
+					rayStart.z += height;
+					rayEnd.z -= height;
+
+					const float havokWorldScale = *g_havokWorldScale;
+
+					/*rayHitCollector.reset();
+					rayCastInput.filterInfo = bhkCollisionFilter::GetSingleton()->GetNewSystemGroup() << 16 | 0x28;
+					rayCastInput.from = NiPointToHkVector(rayStart * havokWorldScale);
+					rayCastInput.to = NiPointToHkVector(rayEnd * havokWorldScale);
+					world->worldLock.LockForRead();
+
+					hkpWorld_CastRay(world->GetWorld2(), &rayCastInput, &rayHitCollector);
+
+					world->worldLock.UnlockRead();
+
+					if (rayHitCollector.m_doesHitExist)
+					{
+						const COL_LAYER hitLayer = static_cast<COL_LAYER>(rayHitCollector.m_closestHitInfo.rootCollidable->m_broadPhaseHandle.m_collisionFilterInfo & 0x7F);
+						switch (hitLayer)
+						{
+						case COL_LAYER::kCharController:
+						case COL_LAYER::kBiped:
+						case COL_LAYER::kDeadBip:
+						case COL_LAYER::kBipedNoCC:
+							LOG_ERR("raycast hit an actor: %d", (int)hitLayer);
+							break;
+						default:
+						{
+							LOG_ERR("raycast hit something else: %d", (int)hitLayer);
+						}
+						break;
+						}
+
+						const NiPoint3 distanceVector = rayEnd - rayStart;
+						NiPoint3 hitPos = rayStart + (distanceVector * rayHitCollector.m_closestHitInfo.hitFraction);
+						auto& nodeList = (*g_thePlayer)->nodeList;
+						const NiAVObject* hmd_node = nodeList[hmdNode];
+
+						//LOG_ERR("hitPos: %g %g %g - player hmd: %g %g %g", hitPos.x, hitPos.y, hitPos.z, hmd_node->m_worldTransform.pos.x, hmd_node->m_worldTransform.pos.y, hmd_node->m_worldTransform.pos.z);
+
+						if (hmd_node && hmd_node->m_worldTransform.pos.z + 100.0f < hitPos.z)
+						{
+							//LOG_ERR("player under cover");
+							return true;
+						}
+					}
+					else
+					{
+						//LOG_ERR("No hit");
+					}*/
+					bhkPickData pickData;
+					pickData.rayInput.from = NiPointToHkVector(rayStart * havokWorldScale);
+					pickData.rayInput.to = NiPointToHkVector(rayEnd * havokWorldScale);
+					pickData.rayInput.enableShapeCollectionFilter = false;
+					pickData.rayInput.filterInfo = bhkCollisionFilter::GetSingleton()->GetNewSystemGroup() << 16 | 0x28;
+
+					if (world->PickObject(pickData))
+					{
+						if (pickData.rayOutput.HasHit() && pickData.rayOutput.rootCollidable != nullptr)
+						{
+							/*NiAVObject* hitNode = GetNodeFromCollidable(pickData.rayOutput.rootCollidable);
+							if (hitNode != nullptr)
+							{
+								LOG_ERR("hitNode: %s", getNodeDesc(hitNode).c_str());
+							}*/
+
+
+							//This sometimes hits some invisible mountain cliff
+							//TESObjectREFR * hitRef = GetRefFromCollidable(pickData.rayOutput.rootCollidable);
+							//if (hitRef != nullptr)
+							//{
+							//	//
+							//	if (hitRef->formID != 0x14) //if not player
+							//	{
+							//		LOG_ERR("raycast hitRef: %x - base:%x", hitRef->formID, hitRef->baseForm ? hitRef->baseForm->formID : 0);
+							//		return true;
+							//	}
+							//}
+
+							const NiPoint3 distanceVector = rayEnd - rayStart;
+							NiPoint3 hitPos = rayStart + (distanceVector * pickData.rayOutput.hitFraction);
+							auto& nodeList = (*g_thePlayer)->nodeList;
+							const NiAVObject* hmd_node = nodeList[hmdNode];
+
+							float hitZDiff = 0.0f;
+							if (hmd_node && hmd_node->m_worldTransform.pos.z + 100.0f < hitPos.z)
+							{
+								hitZDiff = hitPos.z - (hmd_node->m_worldTransform.pos.z + 100.0f);
+							}
+
+							const COL_LAYER hitLayer = static_cast<COL_LAYER>(pickData.rayOutput.rootCollidable->m_broadPhaseHandle.m_collisionFilterInfo & 0x7F);
+							switch (hitLayer)
+							{
+							case COL_LAYER::kCharController:
+							case COL_LAYER::kBiped:
+							case COL_LAYER::kDeadBip:
+							case COL_LAYER::kBipedNoCC:
+							case COL_LAYER::kGround:
+								//LOG_ERR("raycast hit an actor or the ground: %d", hitLayer);
+								break;
+							default:
+							{
+								//LOG_ERR("raycast hit something else: %d  -- hitZdiff: %g", hitLayer, hitZDiff);
+								return true;
+							}
+							break;
+							}
+
+							//LOG_ERR("hitPos: %g %g %g - player hmd: %g %g %g", hitPos.x, hitPos.y, hitPos.z, hmd_node->m_worldTransform.pos.x, hmd_node->m_worldTransform.pos.y, hmd_node->m_worldTransform.pos.z);
+
+							if (hitZDiff > 0.0f && hitZDiff < 1000.0f)
+							{
+								//LOG_ERR("player under cover -- hitZdiff: %g", hmd_node ? hitPos.z - (hmd_node->m_worldTransform.pos.z + 100.0f) : 0.0f);
+								return true;
+							}
+						}
+					}
+				}
+			}
+		}
+
+		return false;
+	}
+
+	taskCoverageCheck::taskCoverageCheck()
+	{
+	}
+
+	void taskCoverageCheck::Run()
+	{
+		const bool playerUnderCoverage = IsPlayerUnderCoverage();
+
+		if (playerUnderCoverage && atomicPlayerUnderCoverage.load() == false)
+		{
+			LOG("Player under coverage");
+			atomicPlayerUnderCoverage.store(true);
+		}
+		else if (!playerUnderCoverage && atomicPlayerUnderCoverage.load())
+		{
+			LOG("Player NOT under coverage");
+			atomicPlayerUnderCoverage.store(false);
+		}
+	}
+
+	void taskCoverageCheck::Dispose()
+	{
+		delete this;
+	}
+
 	void WeatherCheck()
 	{
 		//Address found by: Find "const Sky::`vftable'", then go to the first subroutine that uses it, then right click "Jump to xref to operand", go to the first one(the subroutine), address is the first qword you see after that call sub.
@@ -3261,6 +3450,8 @@ namespace TactsuitVR
 				
 				if (isItRaining)
 				{
+					g_task->AddTask(new taskCoverageCheck());
+
 					//LOG("Transition: %g", skyPtr->transition);
 					if (raining.load() == false)
 					{
@@ -3269,14 +3460,6 @@ namespace TactsuitVR
 						std::thread t12(RaindropVestEffect);
 						t12.detach();
 
-						std::thread t13(RaindropArmEffect, false);
-						t13.detach();
-
-						std::thread t14(RaindropArmEffect, true);
-						t14.detach();
-
-						std::thread t15(RaindropHeadEffect);
-						t15.detach();
 					}
 				}
 				else
@@ -3353,14 +3536,22 @@ namespace TactsuitVR
 						{
 							intensityAdd = ((45.0f - angleBetween) / 45.0f) * -0.33f;
 						}
+
+						FeedbackType feedbackType;
+						if (headingAngle < 90 || headingAngle > 270) {
+							feedbackType = FeedbackType::WindFront;
+						}
+						else {
+							feedbackType = FeedbackType::WindBack;
+						}
 						
 						if(intensityMultiplierBlizzardEffect > TOLERANCE && visualEffectOn && skyPtr->currentWeather->data.windSpeed > WindEffectMinSpeed)
 						{
-							ProvideHapticFeedback(headingAngle, 0, FeedbackType::Wind, ((randomGenerator(5, 10) / 10.0f) +intensityAdd)*intensityMultiplierBlizzardEffect*((float)skyPtr->currentWeather->data.windSpeed/(float)WindEffectMinSpeed), false);
+							ProvideHapticFeedback(headingAngle, 0, feedbackType, ((randomGenerator(5, 10) / 10.0f) +intensityAdd)*intensityMultiplierBlizzardEffect*((float)skyPtr->currentWeather->data.windSpeed/(float)WindEffectMinSpeed), false);
 						}
 						else
 						{
-							ProvideHapticFeedback(headingAngle, 0, FeedbackType::Wind, ((randomGenerator(5,10)/10.0f) + intensityAdd)*intensityMultiplierWindEffect*((float)skyPtr->currentWeather->data.windSpeed / (float)WindEffectMinSpeed), false);
+							ProvideHapticFeedback(headingAngle, 0, feedbackType, ((randomGenerator(5,10)/10.0f) + intensityAdd)*intensityMultiplierWindEffect*((float)skyPtr->currentWeather->data.windSpeed / (float)WindEffectMinSpeed), false);
 						}
 					}
 				}				
@@ -3383,17 +3574,14 @@ namespace TactsuitVR
 
 		while (raining.load() == true)
 		{
-			if (rainDensity > 0 && rainIntensity > 0 && !headIsInsideWaterGeneral.load())
+			if (rainDensity > 0 && rainIntensity > 0 && !headIsInsideWaterGeneral.load() && !atomicPlayerUnderCoverage.load())
 			{
 				minsleepduration = (float)rainvestsleepduration / rainDensity;
 				minsleepDurationInt = static_cast<int>(minsleepduration);
 
 				sleepDuration = randomGenerator(minsleepDurationInt, minsleepDurationInt * 2);
 
-				const int index = randomGeneratorLowMoreProbable(0, 7, 8, 15, 4);
-				const int pos = randomGenerator(0, 1);
-				const int durationOffset = randomGenerator(0, 30) - 15;
-				ProvideDotFeedback(pos == 1 ? OWOGame::MusclesGroup::Front() : OWOGame::MusclesGroup::Back(), index, 30 * rainIntensity * intensityMultiplierRaindropVest, raineffectduration + durationOffset);
+				ProvideHapticFeedback(0, 0, FeedbackType::Rain);
 			}
 			Sleep(sleepDuration);
 		}
@@ -3401,13 +3589,14 @@ namespace TactsuitVR
 
 	void RaindropArmEffect(bool left)
 	{
+		/*
 		float minsleepduration = 100.0;
 		int minsleepDurationInt = 100;
 		int sleepDuration = 100;
 
 		while (raining.load() == true)
 		{
-			if (rainDensity > 0 && rainIntensity > 0 && !headIsInsideWaterGeneral.load())
+			if (rainDensity > 0 && rainIntensity > 0 && !headIsInsideWaterGeneral.load() && !atomicPlayerUnderCoverage.load())
 			{
 				minsleepduration = (float)rainarmsleepduration / rainDensity;
 				minsleepDurationInt = static_cast<int>(minsleepduration);
@@ -3422,17 +3611,19 @@ namespace TactsuitVR
 
 			Sleep(sleepDuration);
 		}
+		*/
 	}
 
 	void RaindropHeadEffect()
 	{
+		/*
 		float minsleepduration = 100.0;
 		int minsleepDurationInt = 100;
 		int sleepDuration = 1;
 
 		while (raining.load() == true)
 		{
-			if (rainDensity > 0 && rainIntensity > 0 && !headIsInsideWaterGeneral.load())
+			if (rainDensity > 0 && rainIntensity > 0 && !headIsInsideWaterGeneral.load() && !atomicPlayerUnderCoverage.load())
 			{
 				minsleepduration = (float)rainarmsleepduration / rainDensity;
 				minsleepDurationInt = static_cast<int>(minsleepduration);
@@ -3445,6 +3636,7 @@ namespace TactsuitVR
 			}
 			Sleep(sleepDuration);
 		}
+		*/
 	}
 
 	std::chrono::steady_clock::time_point beginHoldingBreath;
@@ -4871,6 +5063,11 @@ namespace TactsuitVR
 						feedback = FeedbackType::EnvironmentalPoison;
 						intensity = intensityMultiplierEnvironmentalPoison;
 					}
+					else if (Contains(model, "soultrapcast"))
+					{
+						feedback = FeedbackType::SoulTrapCaptured;
+						intensity = intensityMultiplierSoulTrap;
+					}
 					else if (Contains(model, "shieldspellbody"))
 					{
 						feedback = FeedbackType::MagicArmorSpell;
@@ -4926,6 +5123,8 @@ namespace TactsuitVR
 		int sleepCount = 0;
 		float LastGroundedZ = 0.0f;
 
+		int dontPlayFallEffectWait = 0;
+
 		while (true)
 		{
 			if (once == false && menuTypes["Main Menu"])
@@ -4954,12 +5153,21 @@ namespace TactsuitVR
 				processMan = AIProcessManager::GetSingleton();
 			}
 
-			if (LastGroundedZ - (*g_thePlayer)->loadedState->node->m_worldTransform.pos.z > FallEffectMinHeight)
+			if ((LastGroundedZ - (*g_thePlayer)->loadedState->node->m_worldTransform.pos.z) > FallEffectMinHeight)
 			{			
 				if (!loadingMenuJustClosed.load())
 				{
-					std::thread t15(LateFeedback, 0, FeedbackType::FallEffect, intensityMultiplierFallEffect * ((LastGroundedZ - (*g_thePlayer)->loadedState->node->m_worldTransform.pos.z) / FallEffectMinHeight), 1, 100, true, false);
-					t15.detach();
+					if (dontPlayFallEffectWait > 0)
+					{
+						dontPlayFallEffectWait--;
+					}
+					else
+					{
+						dontPlayFallEffectWait = 20;
+						std::thread t15(LateFeedback, 0, FeedbackType::FallEffect, intensityMultiplierFallEffect * ((LastGroundedZ - (*g_thePlayer)->loadedState->node->m_worldTransform.pos.z) / FallEffectMinHeight), 1, 100, true, false);
+						t15.detach();
+						LastGroundedZ = (*g_thePlayer)->loadedState->node->m_worldTransform.pos.z;
+					}
 				}
 			}
 
@@ -5011,13 +5219,13 @@ namespace TactsuitVR
 					{
 						if(!isSprinting())
 						{
-							ProvideHapticFeedback(0, 0, FeedbackType::HorseRidingSlow, intensityMultiplierHorseRidingSlow * (movingSpeed / 20.0f), true, false);
-							sleepCount = ((horseridingsleepduration) / 100) / (movingSpeed / 35.0f);
+							ProvideHapticFeedback(0, 0, FeedbackType::HorseRidingSlow, intensityMultiplierHorseRidingSlow * (movingSpeed / 50.0f), true, false);
+							sleepCount = ((horseridingsleepduration) / 100) / (movingSpeed / 45.0f);
 						}
 						else
 						{
-							ProvideHapticFeedback(0, 0, FeedbackType::HorseRiding, intensityMultiplierHorseRiding * (movingSpeed / 40.0f), true, false);
-							sleepCount = ((horseridingsleepduration + randomGenerator(0, 150)) / 100) / (movingSpeed / 35.0f);
+							ProvideHapticFeedback(0, 0, FeedbackType::HorseRiding, intensityMultiplierHorseRiding * (movingSpeed / 100.0f), true, false);
+							sleepCount = ((horseridingsleepduration + randomGenerator(0, 150)) / 100) / (movingSpeed / 90.0f);
 						}
 					}
 					else
@@ -5100,6 +5308,19 @@ namespace TactsuitVR
 
 		g_originalActor_NotifyAnimationGraph = *Actor_IAnimationGraphManagerHolder_NotifyAnimationGraph_vtbl;
 		SafeWrite64(Actor_IAnimationGraphManagerHolder_NotifyAnimationGraph_vtbl.GetUIntPtr(), uintptr_t(Hooked_Actor_IAnimationGraphManagerHolder_NotifyAnimationGraph));
+
+
+        /*g_originalProjectile_NotifyAnimationGraph = *Projectile_IAnimationGraphManagerHolder_NotifyAnimationGraph_vtbl;
+        SafeWrite64(Projectile_IAnimationGraphManagerHolder_NotifyAnimationGraph_vtbl.GetUIntPtr(), uintptr_t(Hooked_Projectile_IAnimationGraphManagerHolder_NotifyAnimationGraph));
+
+        g_originalArrowProjectile_NotifyAnimationGraph = *ArrowProjectile_IAnimationGraphManagerHolder_NotifyAnimationGraph_vtbl;
+        SafeWrite64(ArrowProjectile_IAnimationGraphManagerHolder_NotifyAnimationGraph_vtbl.GetUIntPtr(), uintptr_t(Hooked_ArrowProjectile_IAnimationGraphManagerHolder_NotifyAnimationGraph));
+
+        g_originalMissileProjectile_NotifyAnimationGraph = *MissileProjectile_IAnimationGraphManagerHolder_NotifyAnimationGraph_vtbl;
+        SafeWrite64(MissileProjectile_IAnimationGraphManagerHolder_NotifyAnimationGraph_vtbl.GetUIntPtr(), uintptr_t(Hooked_MissileProjectile_IAnimationGraphManagerHolder_NotifyAnimationGraph));
+
+        g_originalModelReferenceEffect_NotifyAnimationGraph = *ModelReferenceEffect_IAnimationGraphManagerHolder_NotifyAnimationGraph_vtbl;
+        SafeWrite64(ModelReferenceEffect_IAnimationGraphManagerHolder_NotifyAnimationGraph_vtbl.GetUIntPtr(), uintptr_t(Hooked_ModelReferenceEffect_IAnimationGraphManagerHolder_NotifyAnimationGraph));*/
 
 		const double swimBreathBase = vlibGetGameSetting("fActorSwimBreathBase");
 		const double swimBreathMult = 0.2;//vlibGetGameSetting("fActorSwimBreathMult");

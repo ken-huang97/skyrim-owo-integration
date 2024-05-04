@@ -18,6 +18,21 @@
 #include <xbyak/xbyak.h>
 #include "skse64/NiExtraData.h"
 #include "skse64_common/BranchTrampoline.h"
+#include <skse64/NiProperties.h>
+#include <skse64/NiObjects.h>
+#include "skse64/InternalTasks.h"
+
+namespace DirectX
+{
+	struct XMFLOAT4X4
+	{
+	public:
+		// members
+		float m[4][4];
+	};
+	STATIC_ASSERT(sizeof(XMFLOAT4X4) == 0x40);
+}
+extern SKSETaskInterface* g_task;
 
 namespace TactsuitVR {
 
@@ -159,6 +174,8 @@ namespace TactsuitVR {
 	void StartHealingEffect(bool rightSpell);
 
 	bool isSprinting();
+
+	std::string getNodeDesc(NiAVObject* node);
 
 	//void HealEffectFeedback();
 
@@ -412,6 +429,59 @@ namespace TactsuitVR {
 		volatile mutable SInt32	refCount;		// 14
 	};
 	STATIC_ASSERT(sizeof(ActorCause) == 0x18);
+
+
+
+	enum class COL_LAYER
+	{
+		kUnidentified = 0,
+		kStatic = 1,
+		kAnimStatic = 2,
+		kTransparent = 3,
+		kClutter = 4,
+		kWeapon = 5,
+		kProjectile = 6,
+		kSpell = 7,
+		kBiped = 8,
+		kTrees = 9,
+		kProps = 10,
+		kWater = 11,
+		kTrigger = 12,
+		kTerrain = 13,
+		kTrap = 14,
+		kNonCollidable = 15,
+		kCloudTrap = 16,
+		kGround = 17,
+		kPortal = 18,
+		kDebrisSmall = 19,
+		kDebrisLarge = 20,
+		kAcousticSpace = 21,
+		kActorZone = 22,
+		kProjectileZone = 23,
+		kGasTrap = 24,
+		kShellCasting = 25,
+		kTransparentWall = 26,
+		kInvisibleWall = 27,
+		kTransparentSmallAnim = 28,
+		kClutterLarge = 29,
+		kCharController = 30,
+		kStairHelper = 31,
+		kDeadBip = 32,
+		kBipedNoCC = 33,
+		kAvoidBox = 34,
+		kCollisionBox = 35,
+		kCameraSphere = 36,
+		kDoorDetection = 37,
+		kConeProjectile = 38,
+		kCamera = 39,
+		kItemPicker = 40,
+		kLOS = 41,
+		kPathingPick = 42,
+		kUnused0 = 43,
+		kUnused1 = 44,
+		kSpellExplosion = 45,
+		kDroppingPick = 46
+	};
 
 	// Must be aligned to 16 bytes (128 bits) as it's a simd type
 	__declspec(align(16)) struct hkVector4
@@ -679,6 +749,180 @@ namespace TactsuitVR {
 
 	int64_t OnProjectileHitFunctionHooked(Projectile* akProjectile, TESObjectREFR* akTarget, NiPoint3* point, uintptr_t unk1, UInt32 unk2, UInt8 unk3);
 
+	struct Capsule
+	{
+		NiPoint3 center; // Center of the capsule
+		float height;    // Height of the capsule
+		float radius;    // Radius of the capsule
+	};
+
+	class BSRenderPass
+	{
+	public:
+		struct LODMode
+		{
+			std::uint8_t index : 7;
+			bool         singleLevel : 1;
+		};
+		STATIC_ASSERT(sizeof(LODMode) == 0x1);
+
+		// members
+		void* shader;            // 00
+		BSShaderProperty* shaderProperty;    // 08
+		BSGeometry* geometry;          // 10
+		std::uint32_t     passEnum;          // 18
+		std::uint8_t      accumulationHint;  // 1C
+		std::uint8_t      extraParam;        // 1D
+		LODMode           LODMode;           // 1E
+		std::uint8_t      numLights;         // 1F
+		std::uint16_t     unk20;             // 20
+		BSRenderPass* next;              // 28
+		BSRenderPass* passGroupNext;     // 30
+		void** sceneLights;       // 38
+		std::uint32_t     cachePoolId;       // 40
+		std::uint32_t     pad44;             // 44
+	};
+	STATIC_ASSERT(sizeof(BSRenderPass) == 0x48);
+
+	class BSParticleShaderProperty;
+
+	class BSParticleShaderEmitter : public NiRefObject
+	{
+	public:
+		enum class EMITTER_TYPE
+		{
+			kGeometry = 0,
+			kCollision = 1,
+			kRay = 2,
+			kSnow = 3,
+			kRain = 4
+		};
+
+		class TextureAnimInfo
+		{
+		public:
+			// members
+			float         currentFrame;  // 00
+			std::uint32_t totalFrames;   // 04
+		};
+		STATIC_ASSERT(sizeof(TextureAnimInfo) == 0x08);
+
+		struct ParticleData
+		{
+		public:
+			// members
+			float        XPos;           // 00
+			float        YPos;           // 04
+			float        ZPos;           // 08
+			float        age;            // 0C
+			float        XVel;           // 10
+			float        YVel;           // 14
+			float        ZVel;           // 18
+			float        lifeAdjust;     // 1C
+			float        rotationStart;  // 20
+			float        rotationSpeed;  // 24
+			float        speedMult;      // 28
+			std::uint8_t texCoordU;      // 29
+			std::uint8_t texCoordV;      // 2A
+			std::uint8_t vertexX;        // 2B
+			std::uint8_t vertexY;        // 2C
+		};
+		STATIC_ASSERT(sizeof(ParticleData) == 0x30);
+
+		// members
+		BSParticleShaderProperty* property;          // 10
+		std::uint16_t									 emitterType;       // 18
+		std::uint16_t                                 particleCount;     // 1A
+		float                                         alpha;             // 1C
+		float                                         generateReminder;  // 20
+		float                                         maxParticleRatio;  // 24
+		TextureAnimInfo* textureAnims;      // 28
+		ParticleData                                  instanceData[78];  // 30
+	};
+	STATIC_ASSERT(sizeof(BSParticleShaderEmitter) == 0xED0);
+
+	class BSParticleShaderCubeEmitter : public BSParticleShaderEmitter
+	{
+	public:
+
+		// members
+		alignas(0x10) DirectX::XMFLOAT4X4 occlusionProjection;  // ED0
+		NiPoint3 cameraOffsetVector;                            // F10
+		NiPoint3 offsetVector;                                  // F1C
+		NiPoint3 compositeOffsetVector;                         // F28
+		NiPoint3 frameVelocityVector;                           // F34
+		NiPoint3 windVelocity;                                  // F40
+		NiPoint3 gravityVelocity;                               // F4C
+		float    rotation;                                      // F58
+		float    rotationVelocity;                              // F5C
+		float    cubeSize;                                      // F60
+		float    density;                                       // F64
+		NiPoint3 instanceOffsets[10];                           // F68
+	};
+	STATIC_ASSERT(sizeof(BSParticleShaderCubeEmitter) == 0xFE0);
+
+	class BSParticleShaderGeometry;
+
+	class BSParticleShaderProperty : public BSShaderProperty
+	{
+	public:                                                                               // 37 - { return particleShaderTexture; }
+
+		// members
+		bool                                         useWorldSpace;                    // 088
+		bool                                         particleGreyscaleAlpha;           // 08A
+		std::uint8_t                                 unk8B;                            // 08B
+		float                                        particleLifetime;                 // 08C
+		float                                        particleLifetimeVariance;         // 090
+		float                                        initialSpeedAlongNormal;          // 094
+		float                                        initialSpeedAlongNormalVariance;  // 098
+		float                                        accelerationAlongNormal;          // 09C
+		float                                        initialVelocity1;                 // 0A0
+		float                                        initialVelocity2;                 // 0A4
+		float                                        intialVelocity3;                  // 0A8
+		float                                        acceleration1;                    // 0AC
+		float                                        acceleration2;                    // 0B0
+		float                                        acceleration3;                    // 0B4
+		float                                        birthPositionOffset;              // 0B8
+		float                                        birthPositionVarianceOffset;      // 0BC
+		float                                        particleShaderInitialRotation;    // 0C0
+		float                                        intialRotationVariance;           // 0C4
+		float                                        rotationSpeed;                    // 0C8
+		float                                        rotationSpeedVariance;            // 0CC
+		bool                                         unk0D0;                           // 0D0
+		std::uint8_t                                 pad0D1;                           // 0D1
+		std::uint16_t                                pad0D2;                           // 0D2
+		float                                        animatedStartFrame;               // 0D4
+		float                                        animatedStartFrameVariance;       // 0D8
+		float                                        animatedEndFrame;                 // 0DC
+		float                                        animatedEndFrameVariance;         // 0E0
+		float                                        animatedLoopStartVariance;        // 0E4
+		float                                        animatedFrameCount;               // 0E8
+		float                                        animatedFrameCountVariance;       // 0EC
+		std::uint32_t                                colorScale;                       // 0F0
+		float                                        colorKey1Time;                    // 0F4
+		float                                        colorKey2Time;                    // 0F8
+		float                                        colorKey3Time;                    // 0FC
+		NiColorA                                     colorKey1;                        // 100
+		NiColorA                                     colorKey2;                        // 110
+		NiColorA                                     colorKey3;                        // 120
+		float                                        scaleKey1;                        // 130
+		float                                        scaleKey2;                        // 134
+		float                                        scaleKey1Time;                    // 138
+		float                                        scaleKey2Time;                    // 13C
+		NiPointer<NiSourceTexture>                   particleShaderTexture;            // 140
+		NiPointer<NiSourceTexture>                   particlePaletteTexture;           // 148
+		tArray<NiPointer<BSParticleShaderEmitter>> particleEmitters;                 // 150
+		NiPointer<BSParticleShaderGeometry>          particleShaderGeometry;           // 168
+		float                                        unk170;                           // 170
+		float                                        textureCountU;                    // 174
+		float                                        textureCountV;                    // 178
+		NiPoint3                                     windPoint;                        // 17C
+		float                                        explosionWindSpeed;               // 188
+		std::uint32_t                                unk18C;                           // 18C
+		BSParticleShaderEmitter* particleEmitter;                  // 190
+	};
+	STATIC_ASSERT(sizeof(BSParticleShaderProperty) == 0x198);
+
 
 	extern bool locationalDamageInstalled;
 	extern SKSETrampolineInterface* g_trampolineInterface;
@@ -834,5 +1078,501 @@ namespace TactsuitVR {
 
 	//UInt32* TESWaterReflectionsFunc_Hook(UInt32* Src, UInt32* a2, UInt32* a3, __int16 flags, const char* staticReflectionTexture);
 	////////////////////////////////
+
+	using hkpShapeKey = std::uint32_t;
+	constexpr hkpShapeKey HK_INVALID_SHAPE_KEY = static_cast<hkpShapeKey>(-1);
+
+	class hkClass;
+	class hkStatisticsCollector;
+	struct hkpCollidable;
+
+	class hkBaseObject
+	{
+	public:
+		virtual ~hkBaseObject() = default;  // 00
+	};
+	STATIC_ASSERT(sizeof(hkBaseObject) == 0x8);
+
+	class hkpCollidableCollidableFilter
+	{
+	public:
+		virtual ~hkpCollidableCollidableFilter();  // 00
+
+		// add
+		virtual bool IsCollisionEnabled(const hkpCollidable& a_collidableA, const hkpCollidable& a_collidableB) const = 0;  // 01
+	};
+	STATIC_ASSERT(sizeof(hkpCollidableCollidableFilter) == 0x8);
+
+
+	class hkReferencedObject : public hkBaseObject
+	{
+	public:
+		enum class LockMode
+		{
+			kNone = 0,
+			kAuto,
+			kManual
+		};
+
+		enum
+		{
+			kMemSize = 0x7FFF
+		};
+
+		hkReferencedObject();
+
+		// add
+		virtual const hkClass* GetClassType() const;                                                                     // 01 - { return 0; }
+		virtual void           CalcContentStatistics(hkStatisticsCollector* a_collector, const hkClass* a_class) const;  // 02
+
+		void         AddReference() const;
+		std::int32_t GetAllocatedSize() const;
+		std::int32_t GetReferenceCount() const;
+		void         RemoveReference() const;
+
+		// members
+		std::uint16_t                 memSizeAndFlags;  // 08
+		volatile mutable std::int16_t referenceCount;   // 0A
+		std::uint32_t                 pad0C;            // 0C
+	};
+	STATIC_ASSERT(sizeof(hkReferencedObject) == 0x10);
+
+	class hkpBvTreeShape;
+	class hkpWorld;
+	class hkpBvTreeShape;
+	struct hkpCdBody;
+	class hkpShapeContainer;
+
+	struct hkpCollisionInput;
+	class hkpShapeContainer;
+
+	struct hkpShapeRayCastInput;
+	struct hkpCollidable;
+
+	struct hkpWorldRayCastInput;
+
+	class hkAabb;
+
+	class hkpRayCollidableFilter
+	{
+	public:
+		virtual ~hkpRayCollidableFilter();  // 00
+
+		// add
+		virtual bool IsCollisionEnabled(const hkpWorldRayCastInput& a_input, const hkpCollidable& a_collidable) const = 0;  // 01
+	};
+	STATIC_ASSERT(sizeof(hkpRayCollidableFilter) == 0x08);
+
+	class hkpRayShapeCollectionFilter
+	{
+	public:
+		// add
+		virtual bool IsCollisionEnabled(const hkpShapeRayCastInput& a_input, const hkpShapeContainer& a_container, hkpShapeKey a_key) const = 0;  // 00
+
+		virtual ~hkpRayShapeCollectionFilter();  // 01
+	};
+	STATIC_ASSERT(sizeof(hkpRayShapeCollectionFilter) == 0x08);
+
+	class hkpShapeCollectionFilter
+	{
+	public:
+		// add
+		virtual bool         IsCollisionEnabled1(const hkpCollisionInput& a_input, const hkpCdBody& a_bodyA, const hkpCdBody& a_bodyB, const hkpShapeContainer& a_shapeB, hkpShapeKey a_key) const = 0;                                                                      // 00
+		virtual bool         IsCollisionEnabled2(const hkpCollisionInput& a_input, const hkpCdBody& a_bodyA, const hkpCdBody& a_bodyB, const hkpShapeContainer& a_shapeA, const hkpShapeContainer& a_shapeB, hkpShapeKey a_keyA, hkpShapeKey a_keyB) const = 0;              // 01
+		virtual std::int32_t NumShapeKeyHitsLimitBreached(const hkpCollisionInput& a_input, const hkpCdBody& a_bodyA, const hkpCdBody& a_bodyB, const hkpBvTreeShape* a_shapeB, hkAabb& a_AABB, hkpShapeKey* a_shapeKeysInOut, std::int32_t a_shapeKeysCapacity) const = 0;  // 02
+
+		virtual ~hkpShapeCollectionFilter();  // 03
+	};
+	STATIC_ASSERT(sizeof(hkpShapeCollectionFilter) == 0x08);
+
+	class hkpCollisionFilter :
+		public hkReferencedObject,             // 00
+		public hkpCollidableCollidableFilter,  // 08
+		public hkpShapeCollectionFilter,       // 10
+		public hkpRayShapeCollectionFilter,    // 18
+		public hkpRayCollidableFilter          // 20
+	{
+	public:
+		enum class hkpFilterType
+		{
+			kUnknown = 0,
+			kNull = 1,
+			kGroup = 2,
+			kList = 3,
+			kFilterCustom = 4,
+			kFilterPair = 5,
+			kFilterConstraint = 6,
+		};
+
+		// add
+		virtual void Init(hkpWorld* world);
+
+		// members
+		std::uint32_t                                  pad30;  // 30
+		std::uint32_t                                  pad34;  // 34
+		std::uint32_t									 type;   // 38
+		std::uint32_t                                  pad3C;  // 3C
+		std::uint32_t                                  pad40;  // 40
+		std::uint32_t                                  pad44;  // 44
+	};
+	STATIC_ASSERT(sizeof(hkpCollisionFilter) == 0x48);
+
+	class bhkCollisionFilter : public hkpCollisionFilter
+	{
+	public:
+		[[nodiscard]] static bhkCollisionFilter* GetSingleton()
+		{
+			RelocPtr<bhkCollisionFilter*> singleton(0x1f89190);
+			return *singleton;
+		}
+
+		std::uint32_t GetNewSystemGroup()
+		{
+			nextSystemGroup = nextSystemGroup + 1;
+			if (nextSystemGroup == 65535) {
+				nextSystemGroup = 10;
+			}
+			return nextSystemGroup;
+		}
+
+		// members
+		std::uint32_t unk48;                     // 048
+		std::uint32_t nextSystemGroup;           // 04C
+		std::uint32_t bipedBitfields[32];        // 050
+		std::uint32_t layerCollisionGroups[64];  // 0D0
+		std::uint64_t layerBitfields[64];        // 1D0
+		std::uint64_t triggerField;              // 3D0
+		std::uint64_t sensorField;               // 3D8
+		BSFixedString collisionLayerNames[64];   // 3E0
+		std::uint8_t  unk5E0[256];               // 5E0
+		BSFixedString collisionBoneNames[32];    // 6E0
+	};
+	STATIC_ASSERT(sizeof(bhkCollisionFilter) == 0x7E0);
+
+	struct hkpWorldRayCastInput
+	{
+	public:
+		// members
+		hkVector4     from;                                  // 00
+		hkVector4     to;                                    // 10
+		bool          enableShapeCollectionFilter{ false };  // 20
+		std::uint32_t filterInfo{ 0 };                       // 24
+	};
+	STATIC_ASSERT(sizeof(hkpWorldRayCastInput) == 0x30);
+
+
+	struct hkpShapeRayCastCollectorOutput
+	{
+	public:
+		[[nodiscard]] constexpr bool HasHit() const noexcept { return hitFraction < 1.0f; }
+
+		constexpr void Reset() noexcept
+		{
+			hitFraction = 1.0f;
+			shapeKey = HK_INVALID_SHAPE_KEY;
+			extraInfo = -1;
+		}
+
+		// members
+		hkVector4    normal;                            // 00
+		float        hitFraction{ 1.0F };               // 10
+		std::int32_t extraInfo{ -1 };                   // 14
+		hkpShapeKey  shapeKey{ HK_INVALID_SHAPE_KEY };  // 18
+		std::int32_t pad1C{ 0 };                        // 1C
+	};
+	STATIC_ASSERT(sizeof(hkpShapeRayCastCollectorOutput) == 0x20);
+
+	struct hkpShapeRayCastOutput : public hkpShapeRayCastCollectorOutput
+	{
+	public:
+		enum
+		{
+			kMaxHierarchyDepth = 8
+		};
+
+		constexpr void ChangeLevel(std::int32_t a_delta) noexcept
+		{
+			assert(shapeKeyIndex + a_delta < kMaxHierarchyDepth);
+			shapeKeyIndex += a_delta;
+		}
+
+		constexpr void SetKey(hkpShapeKey a_key) noexcept { shapeKeys[shapeKeyIndex] = a_key; }
+
+		constexpr void Reset() noexcept
+		{
+			hkpShapeRayCastCollectorOutput::Reset();
+			shapeKeys[0] = HK_INVALID_SHAPE_KEY;
+			shapeKeyIndex = 0;
+		}
+
+		// members
+		hkpShapeKey   shapeKeys[kMaxHierarchyDepth]{ HK_INVALID_SHAPE_KEY };  // 20
+		std::int32_t  shapeKeyIndex{ 0 };                                     // 40
+		std::uint32_t pad44;                                                  // 44
+		std::uint64_t pad48;                                                  // 48
+	};
+	STATIC_ASSERT(sizeof(hkpShapeRayCastOutput) == 0x50);
+
+	struct hkpCollidable;
+
+	struct hkpWorldRayCastOutput : public hkpShapeRayCastOutput
+	{
+	public:
+		[[nodiscard]] constexpr bool HasHit() const noexcept { return rootCollidable != nullptr; }
+
+		constexpr void Reset() noexcept
+		{
+			hkpShapeRayCastOutput::Reset();
+			rootCollidable = nullptr;
+		}
+
+		// members
+		hkpCollidable* rootCollidable{ nullptr };  // 50
+		std::uint64_t        pad58;                      // 58
+	};
+	STATIC_ASSERT(sizeof(hkpWorldRayCastOutput) == 0x60);
+
+	struct hkpCdBody;
+
+	struct hkpShapeRayCastCollectorOutput;
+
+	class hkpRayHitCollector
+	{
+	public:
+
+		// add
+		virtual void AddRayHit(const hkpCdBody& a_body, const hkpWorldRayCastOutput& a_hitInfo) = 0;  // 00
+
+		//virtual ~hkpRayHitCollector();  // 01
+
+		constexpr void Reset() noexcept { earlyOutHitFraction = 1.0f; }
+
+		// members
+		float         earlyOutHitFraction{ 1.0f };  // 08
+		std::uint32_t pad0C;                        // 0C
+	};
+	STATIC_ASSERT(sizeof(hkpRayHitCollector) == 0x10);
+
+	struct RayHitCollector : public hkpRayHitCollector
+	{
+	public:
+		void RayHitCollector::reset()
+		{
+			earlyOutHitFraction = 1.0f;
+			m_doesHitExist = false;
+		}
+
+		RayHitCollector::RayHitCollector()
+		{
+			reset();
+		}
+
+		virtual void AddRayHit(const hkpCdBody& cdBody, const hkpWorldRayCastOutput& hitInfo) override;
+
+		hkpWorldRayCastOutput m_closestHitInfo; //hkpShapeRayCastCollectorOutput m_closestHitInfo;
+		bool m_doesHitExist = false;
+		//const hkpCdBody *m_closestCollidable = nullptr;
+	};
+
+	struct AllRayHitCollector : public hkpRayHitCollector
+	{
+	public:
+		AllRayHitCollector::AllRayHitCollector()
+		{
+			reset();
+		}
+
+		void AllRayHitCollector::reset()
+		{
+			earlyOutHitFraction = 1.0f;
+			m_hits.clear();
+		}
+
+		virtual void AddRayHit(const hkpCdBody& cdBody, const hkpWorldRayCastOutput& hitInfo) override;
+
+		std::vector<std::pair<hkpCdBody*, hkpShapeRayCastCollectorOutput>> m_hits;
+	};
+
+
+	class hkpClosestRayHitCollector : public hkpRayHitCollector
+	{
+	public:
+
+		constexpr bool HasHit() noexcept { return rayHit.HasHit(); }
+
+		constexpr void Reset() noexcept
+		{
+			hkpRayHitCollector::Reset();
+			rayHit.Reset();
+		}
+
+		// members
+		hkpWorldRayCastOutput rayHit;  // 10
+	};
+	STATIC_ASSERT(sizeof(hkpClosestRayHitCollector) == 0x70);
+
+	struct bhkPickData
+	{
+	public:
+		// members
+		hkpWorldRayCastInput       rayInput;                      // 00
+		hkpWorldRayCastOutput      rayOutput;                     // 30
+		hkVector4                  ray;                           // 90
+		hkpClosestRayHitCollector* rayHitCollectorA0{ nullptr };  // A0
+		hkpClosestRayHitCollector* rayHitCollectorA8{ nullptr };  // A8
+		hkpClosestRayHitCollector* rayHitCollectorB0{ nullptr };  // B0
+		hkpClosestRayHitCollector* rayHitCollectorB8{ nullptr };  // B8
+		bool                       unkC0{ false };                // C0
+		std::uint8_t               padC1;                         // C1
+		std::uint16_t              padC2;                         // C2
+		std::uint32_t              padC4;                         // C4
+		std::uint32_t              padC8;                         // C8
+	};
+	STATIC_ASSERT(sizeof(bhkPickData) == 0xD0);
+
+
+	class bhkRefObject : public NiObject
+	{
+	public:
+
+		~bhkRefObject() override;  // 00
+
+		// override(NiObject)
+		virtual NiRTTI* GetRTTI(void) override;  // 02
+
+		// add
+		virtual void SetReferencedObject(hkReferencedObject* a_object);  // 25
+		virtual void AdjustRefCount(bool a_increment);                   // 26
+
+		// members
+		hkReferencedObject* referencedObject;  // 10
+	};
+	STATIC_ASSERT(sizeof(bhkRefObject) == 0x18);
+
+	class ahkpWorld;
+	class hkpWorld;
+	class bhkWorld;
+
+	class bhkSerializable : public bhkRefObject
+	{
+	public:
+
+		~bhkSerializable() override;  // 00
+
+		// override (bhkRefObject)
+		virtual NiRTTI* GetRTTI(void) override;                                    // 02
+		virtual void          LoadBinary(NiStream* a_stream) override;                     // 18
+		virtual void          LinkObject(NiStream* a_stream) override;                     // 19
+		virtual bool          RegisterStreamables(NiStream* a_stream) override;            // 1A - { return NiObject::RegisterStreamables(a_stream); }
+		virtual void          SaveBinary(NiStream* a_stream) override;                     // 1B
+		virtual void          SetReferencedObject(hkReferencedObject* a_object) override;  // 25
+
+		// add
+		virtual hkpWorld* GetWorld1();                     // 27 - { return 0; }
+		virtual ahkpWorld* GetWorld2();                     // 28 - { return 0; }
+		virtual void       MoveToWorld(bhkWorld* a_world);  // 29
+		virtual void       RemoveFromCurrentWorld();        // 2A
+		virtual void       Unk_2B(void);                    // 2B
+		virtual void       Unk_2C(void);                    // 2C - { return 1; }
+		virtual void       Unk_2D(void);                    // 2D
+		virtual void       Unk_2E(void) = 0;                // 2E
+		virtual void       Unk_2F(void) = 0;                // 2F
+		virtual void       Unk_30(void);                    // 30
+		virtual void       Unk_31(void);                    // 31
+
+		// members
+		bhkSerializable* serializable;  // 18
+	};
+	STATIC_ASSERT(sizeof(bhkSerializable) == 0x20);
+
+
+	class bhkWorld : public bhkSerializable
+	{
+	public:
+		class bhkConstraintProjector;
+
+		~bhkWorld() override;  // 00
+
+		// override (bhkSerializable)
+		virtual NiRTTI* GetRTTI() override;                                    // 02
+		virtual void          SetReferencedObject(hkReferencedObject* a_object) override;  // 25
+		virtual void          AdjustRefCount(bool a_increment) override;                   // 26
+		virtual hkpWorld* GetWorld1() override;                                        // 27 - { return referencedObject.ptr; }
+		virtual ahkpWorld* GetWorld2() override;                                        // 28 - { return referencedObject.ptr; }
+		virtual void          Unk_2B(void) override;                                       // 2B
+		virtual void          Unk_2C(void) override;                                       // 2C - { return 1; }
+		virtual void          Unk_2E(void) override;                                       // 2E
+		virtual void          Unk_2F(void) override;                                       // 2F
+
+		// add
+		virtual void Unk_32(void);                                              // 32
+		virtual bool PickObject(bhkPickData& a_pickData);                       // 33
+		virtual void Unk_34(void);                                              // 34
+		virtual void Unk_35(void);                                              // 35
+		virtual void InitHavok(NiAVObject* a_sceneObject, NiAVObject* a_root);  // 36
+
+		// members
+		std::uint8_t                  unk0020[0x320];             // 0020
+		std::uint8_t                  unk0340[0x6400];            // 0340
+		std::uint8_t                  unk6740[0x5DC0];            // 6740
+		tArray<void*>               unkC500;                    // C500
+		tArray<void*>               unkC518;                    // C518
+		tArray<void*>               unkC530;                    // C530
+		tArray<void*>               unkC548;                    // C548
+		std::uint64_t                 unkC560;                    // C560
+		std::uint32_t                 unkC568;                    // C568
+		float                         unkC56C;                    // C56C
+		bhkConstraintProjector* constraintProjector;        // C570
+		std::uint64_t                 unkC578;                    // C578
+		std::uint32_t                 unkC580;                    // C580
+		float                         unkC584;                    // C584
+		std::uint64_t                 unkC588;                    // C588
+		std::uint64_t                 unkC590;                    // C590
+		mutable BSReadWriteLock       worldLock;                  // C598
+		mutable BSReadWriteLock       unkC5A0;                    // C5A0
+		std::uint64_t                 unkC5A8;                    // C5A8
+		hkVector4                     unkC5B0;                    // C5B0
+		std::uint64_t                 unkC5C0;                    // C5C0
+		std::uint64_t				  acousticSpaceListener;      // C5C8
+		std::uint64_t				  suspendInactiveAgentsUtil;  // C5D0
+		std::uint32_t                 unkC5D8;                    // C5D8 - incremented per frame
+		std::uint32_t                 unkC5DC;                    // C5DC
+		std::uint32_t                 unkC5E0;                    // C5E0
+		std::uint32_t                 unkC5E4;                    // C5E4
+		std::uint32_t                 unkC5E8;                    // C5E8
+		std::uint32_t                 unkC5EC;                    // C5EC
+		float                         tau;                        // C5F0
+		float                         damping;                    // C5F4
+		std::uint8_t                  unkC5F8;                    // C5F8
+		bool                          toggleCollision;            // C5F9
+		std::uint16_t                 unkC5FA;                    // C5FA
+		std::uint16_t                 unkC5FC;                    // C5FC
+		std::uint16_t                 unkC5FE;                    // C5FE
+	};
+	STATIC_ASSERT(sizeof(bhkWorld) == 0xC600);
+
+	class taskCoverageCheck : public TaskDelegate
+	{
+	public:
+		virtual void Run();
+		virtual void Dispose();
+
+		taskCoverageCheck();
+	};
+
+	typedef bhkWorld* (*_GetHavokWorldFromCell)(TESObjectCELL* cell);
+	extern RelocAddr<_GetHavokWorldFromCell> GetHavokWorldFromCell;
+
+	typedef NiAVObject* (*_GetNodeFromCollidable)(hkpCollidable* a_collidable);
+	extern RelocAddr<_GetNodeFromCollidable> GetNodeFromCollidable;
+
+	typedef TESObjectREFR* (*_GetRefFromCollidable)(hkpCollidable* a_collidable);
+	extern RelocAddr<_GetRefFromCollidable> GetRefFromCollidable;
+
+	typedef void(*_hkpWorld_CastRay)(ahkpWorld* world, hkpWorldRayCastInput* input, hkpRayHitCollector* collector);
+	extern RelocAddr<_hkpWorld_CastRay> hkpWorld_CastRay;
+
+	typedef void(*_PlayEffectShader)(TESObjectREFR* ref, TESEffectShader* effectShader, float duration, TESObjectREFR* facingRef, UInt8 a5, UInt8 a6, __int64 a7, bool a8);
+	extern RelocAddr <_PlayEffectShader> PlayEffectShader;
 
 }

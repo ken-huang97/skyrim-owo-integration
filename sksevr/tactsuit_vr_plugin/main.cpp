@@ -18,6 +18,7 @@ static SKSEMessagingInterface		* g_messaging = NULL;
 static PluginHandle					g_pluginHandle = kPluginHandle_Invalid;
 static SKSEPapyrusInterface         * g_papyrus = NULL;
 static SKSEObjectInterface         * g_object = NULL;
+SKSETaskInterface* g_task = NULL;
 
 #pragma comment(lib, "Ws2_32.lib")
 PapyrusVRAPI* g_papyrusvr;
@@ -106,7 +107,7 @@ extern "C" {
 		// populate info structure
 		info->infoVersion = PluginInfo::kInfoVersion;
 		info->name = "TactsuitVRPlugin";
-		info->version = 0x020007; // 2.0.7
+		info->version = 0x020200; // 2.2.0
 
 		// store plugin handle so we can identify ourselves later
 		g_pluginHandle = skse->GetPluginHandle();
@@ -289,7 +290,8 @@ extern "C" {
 
 	bool SKSEPlugin_Load(const SKSEInterface * skse) {	// Called by SKSE to load this plugin
 		_MESSAGE("TactsuitVRPluginScript loaded");
-		
+		g_task = (SKSETaskInterface*)skse->QueryInterface(kInterface_Task);
+
 		g_papyrus = (SKSEPapyrusInterface *)skse->QueryInterface(kInterface_Papyrus);
 
 		g_messaging = (SKSEMessagingInterface*)skse->QueryInterface(kInterface_Messaging);
