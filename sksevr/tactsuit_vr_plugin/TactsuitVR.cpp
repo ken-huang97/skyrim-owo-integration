@@ -100,7 +100,15 @@ namespace TactsuitVR {
 
 		if (feedbackMap.find(feedback.feedbackType) != feedbackMap.end())
 		{
-			feedbackMap[feedback.feedbackType].feedbackSensations.push_back(sensation);
+
+			if (stringEndsWith(filename, "_Back.owo")) {
+				feedbackMap[feedback.feedbackType].feedbackSensationsBack.push_back(sensation);
+				_MESSAGE("Added to back");
+			}
+			else {
+				feedbackMap[feedback.feedbackType].feedbackSensations.push_back(sensation);
+			}
+
 			_MESSAGE("Added sensation with duration %f to %s", sensation->TotalDuration(), feedbackTypeToString(feedback.feedbackType).c_str());
 		}
 		else {
@@ -303,11 +311,16 @@ namespace TactsuitVR {
 		}
 	}
 
-	std::shared_ptr<BakedSensation> getRandomSensation(Feedback& feedback) {
+	std::shared_ptr<BakedSensation> getRandomSensation(float locationAngle, Feedback& feedback) {
 		//TODO only need to store the ID and whether it needs muscle?
 
-		std::vector<std::shared_ptr<BakedSensation>>& feedbackSensations = feedback.feedbackSensations;
-		return feedbackSensations[(randi(0, feedbackSensations.size() - 1))];
+
+		std::vector<std::shared_ptr<BakedSensation>>* feedbackSensations = &feedback.feedbackSensations;
+		if (!feedback.feedbackSensationsBack.empty() && locationAngle > 90 && locationAngle < 270) {
+			feedbackSensations = &feedback.feedbackSensationsBack;
+			_MESSAGE("Get back sensation");
+		}
+		return (*feedbackSensations)[(randi(0, feedbackSensations->size() - 1))];
 	}
 
 	void sendFeedback(float locationAngle, float locationHeight, Feedback& feedback, float intensityMultiplier, bool waitToPlay)
@@ -327,7 +340,7 @@ namespace TactsuitVR {
 			}
 
 
-			auto sensation = getRandomSensation(feedback);
+			auto sensation = getRandomSensation(locationAngle, feedback);
 			
 			auto durationSecs = (long double)sensation->TotalDuration();
 			auto timeSinceStartSecs = (long double) getTimeSinceStart() / CLOCKS_PER_SEC;
@@ -591,8 +604,7 @@ namespace TactsuitVR {
 		 {FeedbackType::SwimVest100, "SwimVest100"},
 		 {FeedbackType::DrowningEffectVest, "DrowningEffectVest"},
 		 {FeedbackType::DrowningEffectHead, "DrowningEffectHead"},
-		 {FeedbackType::WindBack, "WindBack"},
-		 {FeedbackType::WindFront, "WindFront"},
+		 {FeedbackType::Wind, "Wind"},
 		 {FeedbackType::Rain, "Rain"},
 		 {FeedbackType::MagicArmorSpell, "MagicArmorSpell"},
 		 {FeedbackType::SoulTrapCaptured, "SoulTrapCaptured"},
@@ -866,8 +878,7 @@ namespace TactsuitVR {
 		feedbackMap[FeedbackType::PlayerCrossbowKickbackLeft] = Feedback(FeedbackType::PlayerCrossbowKickbackLeft, "PlayerCrossbowKickbackLeft_");
 		feedbackMap[FeedbackType::PlayerCrossbowKickbackRight] = Feedback(FeedbackType::PlayerCrossbowKickbackRight, "PlayerCrossbowKickbackRight_");
 
-		feedbackMap[FeedbackType::WindBack] = Feedback(FeedbackType::WindBack, "WindBack_", 0);
-		feedbackMap[FeedbackType::WindFront] = Feedback(FeedbackType::WindFront, "WindFront_", 0);
+		feedbackMap[FeedbackType::Wind] = Feedback(FeedbackType::Wind, "Wind_", 0);
 		feedbackMap[FeedbackType::Rain] = Feedback(FeedbackType::Rain, "Rain_", 0);
 
 		feedbackMap[FeedbackType::MagicArmorSpell] = Feedback(FeedbackType::MagicArmorSpell, "MagicArmorSpell_", 20);

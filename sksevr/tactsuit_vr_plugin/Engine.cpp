@@ -1732,7 +1732,7 @@ namespace TactsuitVR
 
 							if(heightdiff > 0.495f)
 							{
-								ProvideHapticFeedback(headingAngle, 0, FeedbackType::UnarmedHead, intensityMultiplierUnarmedHead* ((evn->flags& evn->kFlag_PowerAttack) ? 2.0f : 1.0f));
+								//ProvideHapticFeedback(headingAngle, 0, FeedbackType::UnarmedHead, intensityMultiplierUnarmedHead* ((evn->flags& evn->kFlag_PowerAttack) ? 2.0f : 1.0f));
 							}
 							
 							return EventResult::kEvent_Continue;
@@ -1960,7 +1960,7 @@ namespace TactsuitVR
 							LOG("Caster is not another npc. FormID: %x", evn->caster->formID);
 							if (randomGenerator(0, 10) == 10)
 							{
-								ProvideHapticFeedback(0, 0, FeedbackType::DefaultHead, intensityMultiplierDefaultHead);
+								//ProvideHapticFeedback(0, 0, FeedbackType::DefaultHead, intensityMultiplierDefaultHead);
 							}
 							ProvideHapticFeedback(0, 0, FeedbackType::Default, intensityMultiplierDefault);
 						}
@@ -2227,7 +2227,7 @@ namespace TactsuitVR
 							{
 								if (randomGenerator(0, 10) == 10)
 								{
-									ProvideHapticFeedback(0, 0, FeedbackType::DefaultHead, intensityMultiplierDefaultHead);
+									//ProvideHapticFeedback(0, 0, FeedbackType::DefaultHead, intensityMultiplierDefaultHead);
 								}
 								ProvideHapticFeedback(0, 0, FeedbackType::Default, intensityMultiplierDefault);
 							}
@@ -2239,7 +2239,7 @@ namespace TactsuitVR
 						LOG("player attacked by other stuff");
 						if (randomGenerator(0, 10) == 10)
 						{
-							ProvideHapticFeedback(0, 0, FeedbackType::DefaultHead, intensityMultiplierDefaultHead);
+							//ProvideHapticFeedback(0, 0, FeedbackType::DefaultHead, intensityMultiplierDefaultHead);
 						}
 						ProvideHapticFeedback(0, 0, FeedbackType::Default, intensityMultiplierDefault);
 						return EventResult::kEvent_Continue;
@@ -3537,13 +3537,7 @@ namespace TactsuitVR
 							intensityAdd = ((45.0f - angleBetween) / 45.0f) * -0.33f;
 						}
 
-						FeedbackType feedbackType;
-						if (headingAngle < 90 || headingAngle > 270) {
-							feedbackType = FeedbackType::WindFront;
-						}
-						else {
-							feedbackType = FeedbackType::WindBack;
-						}
+						auto feedbackType = FeedbackType::Wind;
 						
 						if(intensityMultiplierBlizzardEffect > TOLERANCE && visualEffectOn && skyPtr->currentWeather->data.windSpeed > WindEffectMinSpeed)
 						{

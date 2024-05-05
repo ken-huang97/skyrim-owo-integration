@@ -266,8 +266,7 @@ namespace TactsuitVR
 		DrowningEffectVest,
 		DrowningEffectHead,
 
-		WindFront,
-		WindBack,
+		Wind,
 		Rain,
 
 		MagicArmorSpell,
@@ -279,13 +278,15 @@ namespace TactsuitVR
 		Default
 	};
 
+	const int defaultPriority = 1;
+
 	struct Feedback
 	{
 		Feedback()
 		{
 
 		}
-		Feedback(FeedbackType _feedbackType, std::string _prefix, int _priority = 1)
+		Feedback(FeedbackType _feedbackType, std::string _prefix, int _priority = defaultPriority)
 		{
 			feedbackType = _feedbackType;
 			prefix = _prefix;
@@ -297,6 +298,7 @@ namespace TactsuitVR
 		int priority;
 		std::clock_t expiryTime;
 		std::vector<std::shared_ptr<OWOGame::BakedSensation>> feedbackSensations = std::vector<std::shared_ptr<OWOGame::BakedSensation>>();
+		std::vector<std::shared_ptr<OWOGame::BakedSensation>> feedbackSensationsBack = std::vector<std::shared_ptr<OWOGame::BakedSensation>>();
 	};
 
     extern float TOLERANCE;

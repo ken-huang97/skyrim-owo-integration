@@ -125,6 +125,13 @@ static inline bool stringStartsWith(std::string str, std::string prefix)
 		return false;
 }
 
+static inline bool stringEndsWith(const std::string& str, const std::string& suffix) {
+		if (str.size() < suffix.size()) {
+			return false; // String shorter than suffix, can't end with it
+		}
+	return std::equal(str.end() - suffix.size(), str.end(), suffix.begin());
+}
+
 static inline float randf(float lo, float hi)
 {
 	if (hi == 0)
