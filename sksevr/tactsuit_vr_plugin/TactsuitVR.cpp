@@ -318,7 +318,6 @@ namespace TactsuitVR {
 		std::vector<std::shared_ptr<BakedSensation>>* feedbackSensations = &feedback.feedbackSensations;
 		if (!feedback.feedbackSensationsBack.empty() && locationAngle > 90 && locationAngle < 270) {
 			feedbackSensations = &feedback.feedbackSensationsBack;
-			_MESSAGE("Get back sensation");
 		}
 		return (*feedbackSensations)[(randi(0, feedbackSensations->size() - 1))];
 	}
@@ -378,7 +377,7 @@ namespace TactsuitVR {
 
 	void ProvideHapticFeedbackSpecificFile(float locationAngle, float locationHeight, std::string feedbackFileName, float intensityMultiplier, bool waitToPlay)
 	{
-		//_MESSAGE("ProvideHapticFeedbackSpecificFile");
+		_MESSAGE("ProvideHapticFeedbackSpecificFile: %s", feedbackFileName.c_str());
 		auto feedbackType = stringToFeedbackType(remove_after_underscore(feedbackFileName));
 
 		if (feedbackType != FeedbackType::Default) {

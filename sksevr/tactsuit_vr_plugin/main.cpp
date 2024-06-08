@@ -107,7 +107,7 @@ extern "C" {
 		// populate info structure
 		info->infoVersion = PluginInfo::kInfoVersion;
 		info->name = "TactsuitVRPlugin";
-		info->version = 0x020200; // 2.2.0
+		info->version = 0x020201; // 2.2.0
 
 		// store plugin handle so we can identify ourselves later
 		g_pluginHandle = skse->GetPluginHandle();

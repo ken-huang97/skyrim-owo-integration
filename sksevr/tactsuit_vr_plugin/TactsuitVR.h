@@ -25,7 +25,7 @@
 
 namespace TactsuitVR
 {
-	const std::string MOD_VERSION = "2.0.7";
+	const std::string MOD_VERSION = "2.2.1";
 
 	enum FeedbackType
 	{

@@ -2905,6 +2905,16 @@ namespace TactsuitVR
 
 	float GetMaxHealth()
 	{
+		/*
+		float totalMod = 0.0f;
+		totalMod += (*g_thePlayer)->healthModifiers.modifiers[Actor::ACTOR_VALUE_MODIFIER::kPermanent];
+		totalMod += (*g_thePlayer)->healthModifiers.modifiers[Actor::ACTOR_VALUE_MODIFIER::kTemporary];
+		const float currentHealth = GetCurrentHealth();
+		const float maxHealth = ceilf(currentHealth / CALL_MEMBER_FN((*g_thePlayer), GetActorValuePercentage)(24));
+		
+		return (maxHealth + totalMod);
+		*/
+
 		return ceilf(GetCurrentHealth() / CALL_MEMBER_FN((*g_thePlayer), GetActorValuePercentage)(24));
 	}
 
@@ -3108,7 +3118,7 @@ namespace TactsuitVR
 	hkpWorldRayCastInput rayCastInput;
 	inline hkVector4 NiPointToHkVector(const NiPoint3& pt) { return { pt.x, pt.y, pt.z, 0 }; };
 
-	bool IsPlayerUnderCoverage()
+	bool IsPlayerUnderCoverage(bool previousState)
 	{
 		if ((*g_thePlayer) && (*g_thePlayer)->loadedState && (*g_thePlayer)->loadedState->node)
 		{
@@ -3239,8 +3249,25 @@ namespace TactsuitVR
 								//LOG_ERR("player under cover -- hitZdiff: %g", hmd_node ? hitPos.z - (hmd_node->m_worldTransform.pos.z + 100.0f) : 0.0f);
 								return true;
 							}
+							else
+							{
+								//LOG_ERR("player NOT under cover -- hitZdiff: %g", hmd_node ? hitPos.z - (hmd_node->m_worldTransform.pos.z + 100.0f) : 0.0f);
+							}
+						}
+						else
+						{
+							//LOG_ERR("No hit");
 						}
 					}
+					else
+					{
+						//LOG_ERR("PickObject failed. Returning previous state.");
+						return previousState;
+					}
+				}
+				else
+				{
+					return true;
 				}
 			}
 		}
@@ -3254,7 +3281,7 @@ namespace TactsuitVR
 
 	void taskCoverageCheck::Run()
 	{
-		const bool playerUnderCoverage = IsPlayerUnderCoverage();
+		const bool playerUnderCoverage = IsPlayerUnderCoverage(atomicPlayerUnderCoverage.load());
 
 		if (playerUnderCoverage && atomicPlayerUnderCoverage.load() == false)
 		{
